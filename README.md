@@ -1,6 +1,3 @@
-# us2d_server
-#cpp #mmorpg server
-
 # environment
 
 visual studio 2022 
