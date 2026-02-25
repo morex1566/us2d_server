@@ -2,7 +2,7 @@
 
 visual studio 2022 
 
-window 11
+windows 11
 
 # third-party libraries
 
