@@ -1,11 +1,11 @@
 # us2d_server
-#linux #cpp #mmorpg server
+#cpp #mmorpg server
 
 # environment
 
 visual studio 2022 
 
-windows 11 
+window 11
 
 # third-party libraries
 
