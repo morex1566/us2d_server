@@ -39,3 +39,11 @@
 
 # debug information files
 *.dwo
+
+# Project directories to ignore
+bin/
+intermediate/
+.vs/
+
+# Additional debug database files
+*.idb
