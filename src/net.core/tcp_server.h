@@ -24,12 +24,6 @@ namespace net::core
 
 		~tcp_server();
 
-		// 클라이언트가 연결되면 호출됨
-		void on_connected(const SOCKET client_socket);
-
-		// 클라이언트가 끊기면 호출됨
-		void on_disconnected(const SOCKET client_socket);
-
 		// 클라이언트 accept() 시작
 		void start();
 

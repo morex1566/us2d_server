@@ -25,17 +25,10 @@ net::core::tcp_server::~tcp_server()
 	clear();
 }
 
-void net::core::tcp_server::on_connected(const SOCKET client_socket)
-{
-}
-
-void net::core::tcp_server::on_disconnected(const SOCKET client_socket)
-{
-}
-
 void net::core::tcp_server::start()
 {
-	std::cout << "tcp_server::start() called\n";  // 임시 로그
+	// TODO : 임시 로그
+	std::cout << "tcp_server::start() called\n"; 
 
 	is_running = true;
 
