@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "tcp_client.h"
+#include "input.h"
 
 #define IP "192.168.0.3"
 #define TCP_PORT 60000
@@ -18,9 +19,11 @@ int main()
 
 	client.start();
 
-	while (client.is_running())
+	while (client.is_active())
 	{
 		client.update();
+
+		input::update();
 	}
 
 	return 0;

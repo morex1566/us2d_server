@@ -4,15 +4,15 @@
 
 net::core::session::session(asio::io_context& context, common::ts_deque<packet::packet_request>& recv_buffer,
 	asio_ip::tcp::socket&& client_socket, uint64_t id)
-	: m_context(context), m_recv_buffer(recv_buffer),
-	m_socket(std::move(client_socket)), m_id(id)
+	: context(context), recv_buffer(recv_buffer),
+	socket(std::move(client_socket)), id(id)
 {
 
 }
 
 net::core::session::session(session&& other) noexcept
-	: m_context(other.m_context), m_recv_buffer(other.m_recv_buffer),
-	m_socket(std::move(other.m_socket)), m_id(other.m_id)
+	: context(other.context), recv_buffer(other.recv_buffer),
+	socket(std::move(other.socket)), id(other.id)
 {
 
 }
@@ -24,86 +24,83 @@ net::core::session::~session()
 
 void net::core::session::clear()
 {
-	if (m_socket.is_open())
+	if (socket.is_open())
 	{
-		m_socket.close();
+		socket.close();
 	}
 }
 
 void net::core::session::start()
 {
-	m_is_running = true;
+	is_running = true;
 
 	// async_recv() 명령 예약
-	async_read();
-}
-
-void net::core::session::update()
-{
-
+	async_read_header();
 }
 
 void net::core::session::stop()
 {
 	// 더 이상 async_read() recursive 수행 X
-	m_is_running = false;
+	is_running = false;
 }
 
-void net::core::session::async_read()
+void net::core::session::async_read_header()
 {
-	// 헤더 크기만큼 확보
-	m_packet_stream.resize(sizeof(packet::packet_header));
+    // 새 패킷을 위한 공간 생성
+    auto pkt = std::make_shared<packet::packet>();
 
-	// 클라에서 보낸 데이터 읽기
-	asio::async_read(m_socket, asio::buffer(m_packet_stream, sizeof(packet::packet_header)),
-	[this](boost::system::error_code error, size_t length)
-	{
-		if (!error)
-		{
-			// stream에서 packet_header 파싱
-			packet::packet_header* header = reinterpret_cast<packet::packet_header*>(m_packet_stream.data());
-			packet::packet_id id = header->m_id;
-			uint32_t size = header->m_size;
+    // 헤더 읽기 (pkt->header에 직접 기록)
+    asio::async_read(socket, asio::buffer(&pkt->header, sizeof(packet::packet_header)),
+    [this, pkt](boost::system::error_code error, size_t length)
+    {
+        if (error)
+        {
+            std::cout << "header read error: " << error.message() << std::endl;
+            return;
+        }
 
-			// packet_header로 payload 읽기
-			if (m_is_running)
-			{
-				async_read_impl(id, size);
-			}
-		}
-		else
-		{
-			std::cout << error.what() << std::endl;
-		}
-	});
+        if (!is_running)
+        {
+            return;
+        }
+
+        async_read_payload(pkt);
+    });
 }
 
-void net::core::session::async_read_impl(packet::packet_id id, uint32_t size)
+void net::core::session::async_read_payload(std::shared_ptr<packet::packet> pkt)
 {
-	// payload 크기만큼 확보
-	m_packet_stream.resize(sizeof(packet::packet_header));
+    // 페이로드 크기만큼 버퍼 공간 확보
+    uint32_t size = pkt->header.payload_size;
+    pkt->payload.resize(size);
 
-	// 클라에서 보낸 데이터 읽기
-	asio::async_read(m_socket, asio::buffer(m_packet_stream, size),
-	[this, id, size](boost::system::error_code error, size_t)
-	{
-		if (!error)
-		{
-			auto packet = packet::packet_creator_map[id](m_packet_stream, size);
-			auto handler = game_logic::packet_handler_map[id];
-				
-			// request 버퍼에 추가
-			m_recv_buffer.push_back(packet::packet_request(id, packet, handler));
+    // 페이로드 읽기
+    asio::async_read(socket, asio::buffer(pkt->payload.data(), size),
+    [this, pkt](boost::system::error_code error, size_t length)
+    {
+        if (error)
+        {
+            std::cout << "payload read error: " << error.message() << std::endl;
+            return;
+        }
 
-			// 다음 패킷 헤더 읽기
-			if (m_is_running)
-			{
-				async_read();
-			}
-		}
-		else
-		{
-			std::cout << error.what() << std::endl;
-		}
-	});
+        if (!is_running)
+        {
+            return;
+        }
+
+        // 패킷 식별자 추출
+        packet::packet_id id = pkt->header.id;
+
+        // 디코딩 및 핸들러 매핑
+        // pkt->payload를 직접 전달하여 불필요한 복사 방지
+        auto decoded_payload = packet::packet_decode_map[id](pkt->payload, length);
+        auto handler = game_logic::packet_handler_map[id];
+
+        // 결과물을 큐에 삽입
+        recv_buffer.push_back(packet::packet_request(id, decoded_payload, handler));
+
+        // 다음 패킷을 읽기 위해 순환
+        async_read_header();
+    });
 }

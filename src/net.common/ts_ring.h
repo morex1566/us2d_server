@@ -9,16 +9,16 @@ namespace net::common
     public:
         struct node
         {
-            t m_data;
-            std::atomic<bool> m_is_ready = false;
+            t data;
+            std::atomic<bool> is_ready = false;
 
-            node() : m_is_ready(false) {}
+            node() : is_ready(false) {}
         };
 
     public:
-        ts_ring(size_t size) : m_size(size), m_head(0), m_tail(0)
+        ts_ring(size_t size) : size(size), head(0), tail(0)
         {
-            m_buffer = new node[m_size];
+            buffer.resize(size);
         }
 
         ts_ring(const ts_ring&) = delete;
@@ -27,27 +27,28 @@ namespace net::common
 
         ~ts_ring()
         {
-            delete[] m_buffer;
+            // std::vector가 자동 해제
         }
 
         bool push(const t& in)
         {
-            size_t curr_head_idx = m_head.load(std::memory_order_relaxed);
+            size_t curr_head_idx = head.load(std::memory_order_relaxed);
             size_t next_head_idx;
+            const auto capacity = size.load(std::memory_order_acquire);
 
             // 작업 공간 인덱스 획득 과정
             while (true)
             {
-                next_head_idx = (curr_head_idx + 1) % m_size;
+                next_head_idx = (curr_head_idx + 1) % capacity;
 
                 // 실패 : 버퍼 꽉 참
-                if (next_head_idx == m_tail.load(std::memory_order_acquire))
+                if (next_head_idx == tail.load(std::memory_order_acquire))
                 {
                     return false;
                 }
 
                 // 성공 : current_head이 인덱스 get
-                if (m_head.compare_exchange_weak(curr_head_idx, next_head_idx,
+                if (head.compare_exchange_weak(curr_head_idx, next_head_idx,
                     std::memory_order_release,
                     std::memory_order_relaxed))
                 {
@@ -55,36 +56,37 @@ namespace net::common
                 }
             }
 
-            m_buffer[curr_head_idx].m_data = std::move(in);
-            m_buffer[curr_head_idx].m_is_ready.store(true, std::memory_order_release);
+            buffer[curr_head_idx].data = std::move(in);
+            buffer[curr_head_idx].is_ready.store(true, std::memory_order_release);
 
             return true;
         }
 
         bool pop(t& out)
         {
-            size_t curr_tail_idx = m_tail.load(std::memory_order_relaxed);
+            size_t curr_tail_idx = tail.load(std::memory_order_relaxed);
             size_t next_tail_idx;
+            const auto capacity = size.load(std::memory_order_acquire);
 
             // 작업 공간 인덱스 획득 과정
             while (true)
             {
                 // 실패 : 버퍼 비었음
-                if (curr_tail_idx == m_head.load(std::memory_order_acquire))
+                if (curr_tail_idx == head.load(std::memory_order_acquire))
                 {
                     return false;
                 }
 
                 // 실패 : 데이터가 아직 안들어왔음
-                if (m_buffer[curr_tail_idx].m_is_ready.load(std::memory_order_acquire) == false)
+                if (buffer[curr_tail_idx].is_ready.load(std::memory_order_acquire) == false)
                 {
                     return false;
                 }
 
-                next_tail_idx = (curr_tail_idx + 1) % m_size;
+                next_tail_idx = (curr_tail_idx + 1) % capacity;
 
                 // 성공 : current_tail이 인덱스 get
-                if (m_tail.compare_exchange_weak(curr_tail_idx, next_tail_idx,
+                if (tail.compare_exchange_weak(curr_tail_idx, next_tail_idx,
                     std::memory_order_release,
                     std::memory_order_relaxed))
                 {
@@ -92,17 +94,17 @@ namespace net::common
                 }
             }
 
-            out = std::move(m_buffer[curr_tail_idx].m_data);
-            m_buffer[curr_tail_idx].m_is_ready.store(false, std::memory_order_release);
+            out = std::move(buffer[curr_tail_idx].data);
+            buffer[curr_tail_idx].is_ready.store(false, std::memory_order_release);
 
             return true;
         }
 
 
     private:
-        std::vector<node> m_buffer;
-        std::atomic<size_t> m_size;
-        std::atomic<size_t> m_head;
-        std::atomic<size_t> m_tail;
+        std::vector<node> buffer;
+        std::atomic<size_t> size;
+        std::atomic<size_t> head;
+        std::atomic<size_t> tail;
     };
 }

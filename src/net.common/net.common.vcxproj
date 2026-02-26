@@ -140,11 +140,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="def.h" />
+    <ClInclude Include="input.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ts_deque.h" />
     <ClInclude Include="ts_ring.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="input.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "tcp_client.h"
+#include "input.h"
 
 net::core::tcp_client::tcp_client(const std::string& host, asio_ip::port_type port)
-	: m_socket(m_context), m_endpoint(asio::ip::make_address(host), port)
+	: socket(context), endpoint(asio::ip::make_address(host), port), work_guard(asio::make_work_guard(context))
 {
 
 }
@@ -27,47 +28,70 @@ void net::core::tcp_client::start()
 {
 	std::cout << "tcp_client::start() called\n";  // 임시 로그
 
-	m_is_running = true;
+	is_running = true;
 
 	// socket.async_connect() 명령 예약
 	async_connect();
 
 	// IOCP 이벤트 루프 시작
 	// G : m_context.run()에 의해 여기서 block되는걸 방지
-	m_context_worker = std::thread([this]()
+	context_worker = std::thread([this]()
 	{
-		m_context.run();
+		context.run();
 	});
 }
 
 void net::core::tcp_client::update()
 {
+	if (input::get_key_down('W'))
+	{
+		std::cout << "once" << std::endl;
 
+		auto pkt = std::make_shared<packet::packet>();
+
+		// pkt -> payload 설정
+		transformation payload = transformation();
+		payload.set_x(0.f);
+		payload.set_y(1.f);
+
+		packet::encode_payload(payload, pkt->payload);
+
+		// pkt -> packet_header 설정
+		packet::packet_header header
+		{
+			packet::packet_id::transformation,
+			payload.ByteSizeLong()
+		};
+
+		pkt->header = header;
+
+		async_write_header(pkt);
+	}
 }
 
 void net::core::tcp_client::stop()
 {
-	m_is_running = false;
+	is_running = false;
 
-	m_context.stop();
+	context.stop();
 
-	if (m_context_worker.joinable())
+	if (context_worker.joinable())
 	{
-		m_context_worker.join();
+		context_worker.join();
 	}
 }
 
 void net::core::tcp_client::clear()
 {
-	if (m_socket.is_open())
+	if (socket.is_open())
 	{
-		m_socket.close();
+		socket.close();
 	}
 }
 
 void net::core::tcp_client::async_connect()
 {
-	m_socket.async_connect(m_endpoint, [this](const std::error_code& error)
+	socket.async_connect(endpoint, [this](const std::error_code& error)
 	{
 		// 연결 성공
 		if (!error)
@@ -78,6 +102,40 @@ void net::core::tcp_client::async_connect()
 		else
 		{
 			
+		}
+	});
+}
+
+void net::core::tcp_client::async_write_header(std::shared_ptr<packet::packet> pkt)
+{
+	asio::async_write(socket, asio::buffer(&pkt->header, sizeof(packet::packet::header)),
+	[this, pkt](boost::system::error_code error, size_t length)
+	{
+		if(!error)
+		{
+			async_write_payload(pkt);
+
+			std::cout << "write packet_header done." << std::endl;
+		}
+		else
+		{
+			std::cout << error.what() << std::endl;
+		}
+	});
+}
+
+void net::core::tcp_client::async_write_payload(std::shared_ptr<packet::packet> pkt)
+{
+	asio::async_write(socket, asio::buffer(pkt->payload.data(), pkt->header.payload_size),
+	[this, pkt](boost::system::error_code error, size_t length)
+	{
+		if (!error)
+		{
+			std::cout << "write packet_payload done." << std::endl;
+		}
+		else
+		{
+			std::cout << error.what() << std::endl;
 		}
 	});
 }

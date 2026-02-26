@@ -9,6 +9,7 @@ namespace net::core
 	class tcp_server
 	{
 	public:
+
 		tcp_server
 		(
 			asio::io_context& context,
@@ -41,46 +42,45 @@ namespace net::core
 		void clear();
 
 		// 서버가 클라이언트를 받고 있는지?
-		bool is_running() const { return m_is_running; }
-
+		bool is_active() const { return is_running; }
 
 	private:
+
 		void async_accept();
 
-		void async_write_header();
-
-		void async_write_body();
-
-
 	private:
+
 		// 서버 상태
-		std::atomic<bool> m_is_running = false;
+		std::atomic<bool> is_running = false;
 
 		// IOCP
-		asio::io_context& m_context;
+		asio::io_context& context;
 
 		// IOCP 스레드
-		std::thread m_context_worker;
+		std::thread context_worker;
+
+		// IOCP 작업 없을 때 꺼지지 않도록
+		asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard;
 
 		// 연결할 서버 엔드포인트
-		asio_ip::tcp::endpoint m_endpoint;
+		asio_ip::tcp::endpoint endpoint;
 
 		// server side 소켓
-		asio_ip::tcp::socket m_socket;
+		asio_ip::tcp::socket socket;
 
 		// bind() + listen() + accept()
-		asio_ip::tcp::acceptor& m_acceptor;
+		asio_ip::tcp::acceptor& acceptor;
 
 		// 클라이언트 uid
-		std::atomic<uint64_t> m_session_id = 10000;
+		std::atomic<uint64_t> session_id = 10000;
 
 		// 클라 <-> 서버 연결 인터페이스
-		common::ts_deque<std::shared_ptr<session>> m_sessions;
+		common::ts_deque<std::shared_ptr<session>> sessions;
 
 		// 서버 -> 클라 데이터 버퍼
-		common::ts_deque<packet::packet_request> m_send_buffer;
+		common::ts_deque<packet::packet_request> send_buffer;
 
 		// 클라 -> 서버 데이터 버퍼
-		common::ts_deque<packet::packet_request> m_recv_buffer;
+		common::ts_deque<packet::packet_request> recv_buffer;
 	};
 }

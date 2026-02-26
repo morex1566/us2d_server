@@ -43,6 +43,7 @@
 # Project directories to ignore
 bin/
 intermediate/
+lib/
 .vs/
 
 # Additional debug database files

@@ -1,70 +1,67 @@
 #pragma once
 #include "def.h"
+#include <mutex>
+#include <deque>
 
 namespace net::common
 {
-	template <typename t>
-	class ts_deque
-	{
-	public:
-		ts_deque() {}
+    template <typename t>
+    class ts_deque
+    {
+    public:
+        ts_deque() {}
+        ts_deque(const ts_deque&) = delete;
+        ts_deque& operator=(const ts_deque&) = delete;
+        virtual ~ts_deque()
+        {
+            clear();
+        }
 
-		ts_deque(const ts_deque&) = delete;
+        bool pop_front(t& out_item)
+        {
+            std::scoped_lock lock(mtx);
+            if (deque.empty())
+            {
+                return false;
+            }
 
-		ts_deque& operator=(const ts_deque&) = delete;
+            out_item = std::move(deque.front());
+            deque.pop_front();
+            return true;
+        }
 
-		~ts_deque() {}
+        void push_back(t&& in_item)
+        {
+            std::scoped_lock lock(mtx);
+            deque.emplace_back(std::move(in_item));
+        }
 
-		// deque의 first 요소 참조
-		const t& front()
-		{
-			std::scoped_lock lock(m_mtx);
-			return m_deque.front();
-		}
+        void push_back(t& in_item)
+        {
+            std::scoped_lock lock(mtx);
+            deque.emplace_back(std::move(in_item));
+        }
 
-		// deque의 last 요소 참조
-		const t& back()
-		{
-			std::scoped_lock lock(m_mtx);
-			return m_deque.back();
-		}
+        bool empty()
+        {
+            std::scoped_lock lock(mtx);
+            return deque.empty();
+        }
 
-		// deque의 first 요소 추출
-		t pop_front()
-		{
-			std::scoped_lock lock(m_mtx);
-			auto t = std::move(m_deque.front());
-			m_deque.pop_front();
-			return t;
-		}
+        size_t count()
+        {
+            std::scoped_lock lock(mtx);
+            return deque.size();
+        }
 
-		// deque의 마지막에 요소 삽입
-		void push_back(const t& item)
-		{
-			std::scoped_lock lock(m_mtx);
-			m_deque.emplace_back(std::move(item));
-		}
+        void clear()
+        {
+            std::scoped_lock lock(mtx);
+            deque.clear();
+        }
 
-		bool empty()
-		{
-			std::scoped_lock lock(m_mtx);
-			return m_deque.empty();
-		}
-
-		size_t count()
-		{
-			std::scoped_lock lock(m_mtx);
-			return m_deque.size();
-		}
-
-		void clear()
-		{
-			std::scoped_lock lock(m_mtx);
-			m_deque.clear();
-		}
-
-	protected:
-		std::mutex m_mtx;
-		std::deque<t> m_deque;
-	};
+    protected:
+        std::mutex mtx;
+        std::deque<t> deque;
+    };
 }
