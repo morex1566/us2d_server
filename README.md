@@ -1,14 +1,11 @@
-# us2d_server
-#linux #cpp #mmorpg server
-
-# Enviroment
+# environment
 
 visual studio 2022 
 
-windows 11 
+windows 11
 
-# Third-party Libraries
+# third-party libraries
 
-Google Protobuf 3.14.0 - https://github.com/protocolbuffers/protobuf
+google protobuf 3.14.0 - https://github.com/protocolbuffers/protobuf
 
-Boost C++ Libraries 1.90.0 - https://www.boost.org/releases/latest/
+boost c++ libraries 1.90.0 - https://www.boost.org/releases/latest/
