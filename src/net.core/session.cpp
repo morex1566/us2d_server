@@ -94,8 +94,8 @@ void net::core::session::async_read_payload(std::shared_ptr<packet::packet> pkt)
 
         // 디코딩 및 핸들러 매핑
         // pkt->payload를 직접 전달하여 불필요한 복사 방지
-        auto decoded_payload = packet::packet_decode_map[id](pkt->payload, length);
-        auto handler = game_logic::packet_handler_map[id];
+        auto decoded_payload = packet::packet_serializer_map[id](pkt->payload, length);
+        auto handler = packet::packet_handler_map[id];
 
         // 결과물을 큐에 삽입
         recv_buffer.push_back(packet::packet_request(id, decoded_payload, handler));

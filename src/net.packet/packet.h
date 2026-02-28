@@ -4,7 +4,7 @@
 namespace net::packet
 {
     template <typename t_packet>
-    concept is_protobuf_message = std::derived_from<t_packet, google::protobuf::Message>;
+    concept is_protobuf_message = std::derived_from<t_packet, payload>;
 
     // 패킷 식별 ID
     enum class packet_id : uint8_t
@@ -17,12 +17,12 @@ namespace net::packet
     // t : protoc.exe로 생성한 패킷 클래스
     template <typename t>
     requires is_protobuf_message<t>
-    std::shared_ptr<google::protobuf::Message> decode_payload(const std::vector<uint8_t>& stream, uint32_t size)
+    payload_sptr deserialize_payload(const std::vector<uint8_t>& stream, uint32_t size)
     {
         // 탬플릿이 google::protobuf 가 아님
         static_assert
         (
-            std::is_base_of_v<google::protobuf::Message, t>, "t must derive from google::protobuf::Message"
+            std::is_base_of_v<payload, t>, "t must derive from google::protobuf::Message"
         );
 
         auto msg = std::make_shared<t>();
@@ -40,7 +40,7 @@ namespace net::packet
 
     template <typename t>
     requires is_protobuf_message<t>
-    bool encode_payload(const t& t_payload, std::vector<uint8_t>& t_out_buffer)
+    bool serialize_payload(const t& t_payload, std::vector<uint8_t>& t_out_buffer)
     {
         // 1. 캐시된 크기 사용 (ByteSizeLong은 내부적으로 캐시를 업데이트함)
         const size_t payload_size = t_payload.ByteSizeLong();
@@ -62,16 +62,13 @@ namespace net::packet
     }
 
     // [enum packet.id] 접근, 데이터 스트림 -> google::protobuf 변환 함수 호출
-    inline static std::unordered_map<
-        packet_id,
-        std::function<std::shared_ptr<google::protobuf::Message>(const std::vector<uint8_t>&, uint32_t)>> packet_decode_map
+    inline static std::unordered_map<packet_id, serialization_handle> packet_serializer_map
     {
         // std::pair를 생략하고 중괄호로 묶습니다.
-        { packet_id::transformation, &net::packet::decode_payload<transformation> }
+        { packet_id::transformation, &net::packet::deserialize_payload<transformation> }
     };
 
 
-    // 패킷 payload 읽기 위한 필수 정보
 #pragma pack(push, 1)
     struct packet_header
     {
@@ -94,26 +91,22 @@ namespace net::packet
         std::vector<uint8_t> payload;
     };
 
-    // packet_id + packet_payload + packet_handler 전부 포함
+    /// <summary>
+    /// 패킷을 서버에서 처리하기 위해 사용하는 명령
+    /// </summary>
     struct packet_request
     {
     public:
         packet_request() = default;
 
-        packet_request
-        (
-            packet_id id,
-            std::shared_ptr<google::protobuf::Message> payload,
-            std::function<void(std::shared_ptr<google::protobuf::Message>)> handler
-        )
-            : id(id), payload(payload), handler(handler) {
-        }
+        packet_request(packet_id id, payload_sptr payload, payload_handle handler)
+            : id(id), payload(payload), handler(handler) { }
 
         packet_id id;
 
-        std::shared_ptr<google::protobuf::Message> payload;
+        payload_sptr payload;
 
-        std::function<void(std::shared_ptr<google::protobuf::Message>)> handler;
+        payload_handle handler;
 
         void execute()
         {

@@ -43,30 +43,30 @@ void net::core::tcp_client::start()
 
 void net::core::tcp_client::update()
 {
-	if (input::get_key_down('W'))
-	{
-		std::cout << "once" << std::endl;
+	//if (input::get_key_down('W'))
+	//{
+	//	std::cout << "once" << std::endl;
 
-		auto pkt = std::make_shared<packet::packet>();
+	//	auto pkt = std::make_shared<packet::packet>();
 
-		// pkt -> payload 설정
-		transformation payload = transformation();
-		payload.set_x(0.f);
-		payload.set_y(1.f);
+	//	// pkt -> payload 설정
+	//	transformation payload = transformation();
+	//	payload.set_x(0.f);
+	//	payload.set_y(1.f);
 
-		packet::encode_payload(payload, pkt->payload);
+	//	packet::serialize_payload(payload, pkt->payload);
 
-		// pkt -> packet_header 설정
-		packet::packet_header header
-		{
-			packet::packet_id::transformation,
-			payload.ByteSizeLong()
-		};
+	//	// pkt -> packet_header 설정
+	//	packet::packet_header header
+	//	{
+	//		packet::packet_id::transformation,
+	//		payload.ByteSizeLong()
+	//	};
 
-		pkt->header = header;
+	//	pkt->header = header;
 
-		async_write_header(pkt);
-	}
+	//	async_write_header(pkt);
+	//}
 }
 
 void net::core::tcp_client::stop()

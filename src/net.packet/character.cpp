@@ -1,8 +1,7 @@
-#include "pch.h"
 #include "character.h"
 #include "transformation.pb.h"
 
-namespace net::game_logic
+namespace net::packet
 {
 	void on_character_move(std::shared_ptr<google::protobuf::Message> payload)
 	{
