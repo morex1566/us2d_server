@@ -29,8 +29,6 @@ namespace net::core
 		// 클라이언트 시작
 		void start();
 
-		void update();
-
 		// 클라이언트 종료
 		void stop();
 

@@ -1,5 +1,11 @@
 #pragma once
 #include "def.h"
+#pragma region include_"google/protoc.generated.h"
+#include "transformation.pb.h"
+#include "server_stats.pb.h"
+#include "chat_message.pb.h"
+// 여기에 계속해서 protoc파일 헤더 추가 <-----------------
+#pragma endregion
 
 namespace net::packet
 {
@@ -10,7 +16,13 @@ namespace net::packet
     enum class packet_id : uint8_t
     {
         none,
-        transformation
+
+        // game logic
+        transformation,
+        chat,
+
+        // admin logic
+        load_stats
     };
 
     // socket async_read() 후, 받은 데이터 스트림 -> google::protobuf 변환
@@ -65,7 +77,8 @@ namespace net::packet
     inline static std::unordered_map<packet_id, serialization_handle> packet_serializer_map
     {
         // std::pair를 생략하고 중괄호로 묶습니다.
-        { packet_id::transformation, &net::packet::deserialize_payload<transformation> }
+        { packet_id::transformation, &net::packet::deserialize_payload<transformation> },
+        { packet_id::transformation, &net::packet::deserialize_payload<server_stats> }
     };
 
 
@@ -81,39 +94,30 @@ namespace net::packet
     };
 #pragma pack(pop)
 
-
+    /// <summary>
+    /// 클라-서버 통신 데이터
+    /// </summary>
     struct packet
     {
     public:
         packet_header header;
 
-        // google protobuf로 만든 class를 SerializeToArray()
+        // google protobuf로 만든 class를 deserialize한 데이터
         std::vector<uint8_t> payload;
     };
 
     /// <summary>
-    /// 패킷을 서버에서 처리하기 위해 사용하는 명령
+    /// 서버의 recv 버퍼에 큐를 거는 용도
     /// </summary>
     struct packet_request
     {
     public:
         packet_request() = default;
 
-        packet_request(packet_id id, payload_sptr payload, payload_handle handler)
-            : id(id), payload(payload), handler(handler) { }
+        packet_request(packet_id id, payload_sptr payload) : id(id), payload(payload) { }
 
         packet_id id;
 
         payload_sptr payload;
-
-        payload_handle handler;
-
-        void execute()
-        {
-            if (handler && payload)
-            {
-                handler(payload);
-            }
-        }
     };
 }

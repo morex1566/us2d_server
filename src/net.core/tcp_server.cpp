@@ -43,19 +43,6 @@ void net::core::tcp_server::start()
 	});
 }
 
-void net::core::tcp_server::update()
-{
-	// TODO : 테스트 코드
-	{
-		packet::packet_request request;
-
-		if (recv_buffer.pop_front(request))
-		{
-			request.execute();
-		}
-	}
-}
-
 void net::core::tcp_server::stop()
 {
 	is_running = false;

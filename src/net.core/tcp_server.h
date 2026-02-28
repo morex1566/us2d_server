@@ -27,8 +27,6 @@ namespace net::core
 		// 클라이언트 accept() 시작
 		void start();
 
-		void update();
-
 		// 클라이언트 accept() 종료
 		void stop();
 

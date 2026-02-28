@@ -160,18 +160,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="character.h" />
-    <ClInclude Include="chat.pb.h" />
+    <ClInclude Include="chat_message.pb.h" />
     <ClInclude Include="def.h" />
-    <ClInclude Include="isession.h" />
-    <ClInclude Include="logic.h" />
     <ClInclude Include="packet.h" />
     <ClInclude Include="server_stats.pb.h" />
     <ClInclude Include="transformation.pb.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="character.cpp" />
-    <ClCompile Include="chat.pb.cc" />
-    <ClCompile Include="logic.cpp" />
+    <ClCompile Include="chat_message.pb.cc" />
     <ClCompile Include="packet.cpp" />
     <ClCompile Include="server_stats.pb.cc" />
     <ClCompile Include="transformation.pb.cc">

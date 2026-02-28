@@ -1,16 +1,12 @@
 #pragma once
 #include <iostream>
-#include <vector>
-#include <string>
 #include <memory>
-#include <thread>
-#include <mutex>
-#include <atomic>
+#include <vector>
 #include <functional>
-#include <type_traits>
+#include <unordered_map>
 
 namespace net::core
 {
-	namespace asio_ip = boost::asio::ip;
 	namespace asio = boost::asio;
+	namespace asio_ip = boost::asio::ip;
 }
