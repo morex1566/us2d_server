@@ -139,10 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="def.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ts_deque.h" />
+    <ClInclude Include="ts_map.h" />
+    <ClInclude Include="ts_pool.h" />
     <ClInclude Include="ts_ring.h" />
   </ItemGroup>
   <ItemGroup>
@@ -154,6 +155,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ts_deque.cpp" />
+    <ClCompile Include="ts_map.cpp" />
+    <ClCompile Include="ts_pool.cpp" />
     <ClCompile Include="ts_ring.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

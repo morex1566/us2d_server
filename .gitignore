@@ -48,3 +48,8 @@ lib/
 
 # Additional debug database files
 *.idb
+
+# agent skill
+common_skill.md
+logic_skill.md
+review_skill.md

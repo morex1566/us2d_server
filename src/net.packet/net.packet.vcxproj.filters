@@ -18,19 +18,13 @@
     <ClInclude Include="packet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="transformation.pb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="def.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="server_stats.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="character.h">
+    <ClInclude Include="transformation.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="chat_message.pb.h">
+    <ClInclude Include="chat.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,16 +32,13 @@
     <ClCompile Include="packet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="transformation.pb.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="server_stats.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="character.cpp">
+    <ClCompile Include="transformation.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="chat_message.pb.cc">
+    <ClCompile Include="chat.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

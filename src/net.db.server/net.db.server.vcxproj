@@ -80,13 +80,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\net.packet;$(SolutionDir)src\net.core;$(SolutionDir)src\net.common;$(SolutionDir)src\net.db.server.logic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\net.packet;$(SolutionDir)src\net.core;$(SolutionDir)src\net.common;$(SolutionDir)src\net.logic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>net.common.lib;net.core.lib;net.packet.lib;net.db.server.logic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>net.common.lib;net.core.lib;net.packet.lib;net.logic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -97,13 +97,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\net.packet;$(SolutionDir)src\net.core;$(SolutionDir)src\net.common;$(SolutionDir)src\net.db.server.logic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\net.packet;$(SolutionDir)src\net.core;$(SolutionDir)src\net.common;$(SolutionDir)src\net.logic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>net.common.lib;net.core.lib;net.packet.lib;net.db.server.logic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>net.common.lib;net.core.lib;net.packet.lib;net.logic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -112,13 +112,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\net.packet;$(SolutionDir)src\net.core;$(SolutionDir)src\net.common;$(SolutionDir)src\net.db.server.logic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\net.packet;$(SolutionDir)src\net.core;$(SolutionDir)src\net.common;$(SolutionDir)src\net.logic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>net.common.lib;net.core.lib;net.packet.lib;net.db.server.logic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>net.common.lib;net.core.lib;net.packet.lib;net.logic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -129,13 +129,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\net.packet;$(SolutionDir)src\net.core;$(SolutionDir)src\net.common;$(SolutionDir)src\net.db.server.logic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\net.packet;$(SolutionDir)src\net.core;$(SolutionDir)src\net.common;$(SolutionDir)src\net.logic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>net.common.lib;net.core.lib;net.packet.lib;net.db.server.logic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>net.common.lib;net.core.lib;net.packet.lib;net.logic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

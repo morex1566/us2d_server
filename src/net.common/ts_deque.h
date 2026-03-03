@@ -1,7 +1,7 @@
 #pragma once
-#include "def.h"
-#include <mutex>
 #include <deque>
+#include <mutex>
+#include <condition_variable>
 
 namespace net::common
 {
@@ -30,16 +30,30 @@ namespace net::common
             return true;
         }
 
-        void push_back(t&& in_item)
+        void wait_and_pop(t& out_item)
         {
-            std::scoped_lock lock(mtx);
-            deque.emplace_back(std::move(in_item));
+            std::unique_lock<std::mutex> lock(mtx);
+            cv.wait(lock, [this] { return !deque.empty(); });
+            out_item = std::move(deque.front());
+            deque.pop_front();
         }
 
-        void push_back(t& in_item)
+        void push_back(t&& in_item)
         {
-            std::scoped_lock lock(mtx);
-            deque.emplace_back(std::move(in_item));
+            {
+                std::scoped_lock lock(mtx);
+                deque.emplace_back(std::move(in_item));
+            }
+            cv.notify_one();
+        }
+
+        void push_back(const t& in_item)
+        {
+            {
+                std::scoped_lock lock(mtx);
+                deque.emplace_back(in_item);
+            }
+            cv.notify_one();
         }
 
         bool empty()
@@ -60,8 +74,11 @@ namespace net::common
             deque.clear();
         }
 
-    protected:
+    private:
         std::mutex mtx;
+
         std::deque<t> deque;
+
+        std::condition_variable cv;
     };
 }

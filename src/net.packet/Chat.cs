@@ -24,14 +24,15 @@ namespace Net.Protocol {
     static ChatReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgpjaGF0LnByb3RvEgxuZXQucHJvdG9jb2wiWQoMY2hhdF9tZXNzYWdlEhIK",
-            "Cm1lc3NhZ2VfaWQYASABKAQSEQoJc2VuZGVyX2lkGAIgASgEEg8KB2NvbnRl",
-            "bnQYAyABKAkSEQoJdGltZXN0YW1wGAQgASgDKiwKCWNoYXRfdHlwZRIICgRU",
-            "RVhUEAASCQoFSU1BR0UQARIKCgZTWVNURU0QAmIGcHJvdG8z"));
+            "CgpjaGF0LnByb3RvEgxuZXQucHJvdG9jb2wiZAoEY2hhdBIlCgR0eXBlGAEg",
+            "ASgOMhcubmV0LnByb3RvY29sLmNoYXRfdHlwZRIRCglzZW5kZXJfaWQYAiAB",
+            "KAQSDwoHY29udGVudBgDIAEoCRIRCgl0aW1lc3RhbXAYBCABKAMqLAoJY2hh",
+            "dF90eXBlEggKBFRFWFQQABIJCgVJTUFHRRABEgoKBlNZU1RFTRACYgZwcm90",
+            "bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Net.Protocol.chat_type), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Net.Protocol.chat_message), global::Net.Protocol.chat_message.Parser, new[]{ "MessageId", "SenderId", "Content", "Timestamp" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Net.Protocol.chat), global::Net.Protocol.chat.Parser, new[]{ "Type", "SenderId", "Content", "Timestamp" }, null, null, null, null)
           }));
     }
     #endregion
@@ -56,15 +57,15 @@ namespace Net.Protocol {
   #endregion
 
   #region Messages
-  public sealed partial class chat_message : pb::IMessage<chat_message>
+  public sealed partial class chat : pb::IMessage<chat>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<chat_message> _parser = new pb::MessageParser<chat_message>(() => new chat_message());
+    private static readonly pb::MessageParser<chat> _parser = new pb::MessageParser<chat>(() => new chat());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<chat_message> Parser { get { return _parser; } }
+    public static pb::MessageParser<chat> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -77,15 +78,15 @@ namespace Net.Protocol {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public chat_message() {
+    public chat() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public chat_message(chat_message other) : this() {
-      messageId_ = other.messageId_;
+    public chat(chat other) : this() {
+      type_ = other.type_;
       senderId_ = other.senderId_;
       content_ = other.content_;
       timestamp_ = other.timestamp_;
@@ -93,21 +94,18 @@ namespace Net.Protocol {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public chat_message Clone() {
-      return new chat_message(this);
+    public chat Clone() {
+      return new chat(this);
     }
 
-    /// <summary>Field number for the "message_id" field.</summary>
-    public const int MessageIdFieldNumber = 1;
-    private ulong messageId_;
-    /// <summary>
-    /// 메시지 고유 번호 (DB PK 또는 시퀀스)
-    /// </summary>
+    /// <summary>Field number for the "type" field.</summary>
+    public const int TypeFieldNumber = 1;
+    private global::Net.Protocol.chat_type type_ = global::Net.Protocol.chat_type.Text;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ulong MessageId {
-      get { return messageId_; }
+    public global::Net.Protocol.chat_type Type {
+      get { return type_; }
       set {
-        messageId_ = value;
+        type_ = value;
       }
     }
 
@@ -155,18 +153,18 @@ namespace Net.Protocol {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as chat_message);
+      return Equals(other as chat);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(chat_message other) {
+    public bool Equals(chat other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (MessageId != other.MessageId) return false;
+      if (Type != other.Type) return false;
       if (SenderId != other.SenderId) return false;
       if (Content != other.Content) return false;
       if (Timestamp != other.Timestamp) return false;
@@ -176,7 +174,7 @@ namespace Net.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (MessageId != 0UL) hash ^= MessageId.GetHashCode();
+      if (Type != global::Net.Protocol.chat_type.Text) hash ^= Type.GetHashCode();
       if (SenderId != 0UL) hash ^= SenderId.GetHashCode();
       if (Content.Length != 0) hash ^= Content.GetHashCode();
       if (Timestamp != 0L) hash ^= Timestamp.GetHashCode();
@@ -196,9 +194,9 @@ namespace Net.Protocol {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (MessageId != 0UL) {
+      if (Type != global::Net.Protocol.chat_type.Text) {
         output.WriteRawTag(8);
-        output.WriteUInt64(MessageId);
+        output.WriteEnum((int) Type);
       }
       if (SenderId != 0UL) {
         output.WriteRawTag(16);
@@ -221,9 +219,9 @@ namespace Net.Protocol {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (MessageId != 0UL) {
+      if (Type != global::Net.Protocol.chat_type.Text) {
         output.WriteRawTag(8);
-        output.WriteUInt64(MessageId);
+        output.WriteEnum((int) Type);
       }
       if (SenderId != 0UL) {
         output.WriteRawTag(16);
@@ -246,8 +244,8 @@ namespace Net.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (MessageId != 0UL) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(MessageId);
+      if (Type != global::Net.Protocol.chat_type.Text) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Type);
       }
       if (SenderId != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(SenderId);
@@ -265,12 +263,12 @@ namespace Net.Protocol {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(chat_message other) {
+    public void MergeFrom(chat other) {
       if (other == null) {
         return;
       }
-      if (other.MessageId != 0UL) {
-        MessageId = other.MessageId;
+      if (other.Type != global::Net.Protocol.chat_type.Text) {
+        Type = other.Type;
       }
       if (other.SenderId != 0UL) {
         SenderId = other.SenderId;
@@ -296,7 +294,7 @@ namespace Net.Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            MessageId = input.ReadUInt64();
+            Type = (global::Net.Protocol.chat_type) input.ReadEnum();
             break;
           }
           case 16: {
@@ -326,7 +324,7 @@ namespace Net.Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 8: {
-            MessageId = input.ReadUInt64();
+            Type = (global::Net.Protocol.chat_type) input.ReadEnum();
             break;
           }
           case 16: {

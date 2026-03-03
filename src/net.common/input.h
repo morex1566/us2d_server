@@ -1,6 +1,5 @@
 #pragma once
 
-#include "def.h"
 #include <Windows.h>
 
 class input

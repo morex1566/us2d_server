@@ -1,5 +1,4 @@
 #pragma once
-#include "def.h"
 
 namespace net::common
 {
@@ -18,7 +17,7 @@ namespace net::common
     public:
         ts_ring(size_t size) : size(size), head(0), tail(0)
         {
-            buffer.resize(size);
+            t_buffer.resize(size);
         }
 
         ts_ring(const ts_ring&) = delete;
@@ -56,8 +55,8 @@ namespace net::common
                 }
             }
 
-            buffer[curr_head_idx].data = std::move(in);
-            buffer[curr_head_idx].is_ready.store(true, std::memory_order_release);
+            t_buffer[curr_head_idx].data = std::move(in);
+            t_buffer[curr_head_idx].is_ready.store(true, std::memory_order_release);
 
             return true;
         }
@@ -78,7 +77,7 @@ namespace net::common
                 }
 
                 // 실패 : 데이터가 아직 안들어왔음
-                if (buffer[curr_tail_idx].is_ready.load(std::memory_order_acquire) == false)
+                if (t_buffer[curr_tail_idx].is_ready.load(std::memory_order_acquire) == false)
                 {
                     return false;
                 }
@@ -94,15 +93,15 @@ namespace net::common
                 }
             }
 
-            out = std::move(buffer[curr_tail_idx].data);
-            buffer[curr_tail_idx].is_ready.store(false, std::memory_order_release);
+            out = std::move(t_buffer[curr_tail_idx].data);
+            t_buffer[curr_tail_idx].is_ready.store(false, std::memory_order_release);
 
             return true;
         }
 
 
     private:
-        std::vector<node> buffer;
+        std::vector<node> t_buffer;
         std::atomic<size_t> size;
         std::atomic<size_t> head;
         std::atomic<size_t> tail;

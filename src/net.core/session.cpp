@@ -1,56 +1,64 @@
 #include "pch.h"
 #include "session.h"
 
-net::core::session::session(asio::io_context& context, common::ts_deque<packet::packet_request>& recv_buffer,
-	asio_ip::tcp::socket&& client_socket, uint64_t id)
-	: context(context), recv_buffer(recv_buffer),
-	socket(std::move(client_socket)), id(id)
+net::core::session::session
+(
+    boost::asio::io_context& context,
+    std::shared_ptr<common::ts_pool<packet::packet>> server_packet_pool,
+    common::ts_deque<packet::packet_request>& server_recv_buffer,
+    boost::asio::ip::tcp::socket&& client_socket,
+    uint64_t session_id
+) : context(context),
+    server_packet_pool(server_packet_pool),
+    server_recv_buffer(server_recv_buffer),
+    socket(std::move(client_socket)),
+    session_id(session_id)
 {
-
 }
 
 net::core::session::session(session&& other) noexcept
-	: context(other.context), recv_buffer(other.recv_buffer),
-	socket(std::move(other.socket)), id(other.id)
+    : context(other.context),
+      server_packet_pool(other.server_packet_pool),
+      server_recv_buffer(other.server_recv_buffer),
+      socket(std::move(other.socket)),
+      session_id(other.session_id)
 {
-
 }
 
 net::core::session::~session()
 {
-	clear();
+    clear();
 }
 
 void net::core::session::clear()
 {
-	if (socket.is_open())
-	{
-		socket.close();
-	}
+    if (socket.is_open())
+    {
+        socket.close();
+    }
 }
 
 void net::core::session::start()
 {
-	is_running = true;
+    is_running = true;
 
-	// async_recv() 명령 예약
-	async_read_header();
+    async_read_header();
+
+    std::cout << "client access approved. session_id: " << session_id << std::endl;
 }
 
 void net::core::session::stop()
 {
-	// 더 이상 async_read() recursive 수행 X
-	is_running = false;
+    is_running = false;
 }
 
 void net::core::session::async_read_header()
 {
-    // 새 패킷을 위한 공간 생성
-    auto pkt = std::make_shared<packet::packet>();
+    current_pkt = server_packet_pool->acquire();
 
-    // 헤더 읽기 (pkt->header에 직접 기록)
-    asio::async_read(socket, asio::buffer(&pkt->header, sizeof(packet::packet_header)),
-    [this, pkt](boost::system::error_code error, size_t length)
+    auto self = shared_from_this();
+    boost::asio::async_read(socket, boost::asio::buffer(&current_pkt->header, sizeof(packet::packet_header)),
+    [this, self](boost::system::error_code error, size_t /*length*/)
     {
         if (error)
         {
@@ -63,19 +71,17 @@ void net::core::session::async_read_header()
             return;
         }
 
-        async_read_payload(pkt);
+        async_read_payload();
     });
 }
 
-void net::core::session::async_read_payload(std::shared_ptr<packet::packet> pkt)
+void net::core::session::async_read_payload()
 {
-    // 페이로드 크기만큼 버퍼 공간 확보
-    uint32_t size = pkt->header.payload_size;
-    pkt->payload.resize(size);
+    current_pkt->payload.resize(current_pkt->header.payload_size);
 
-    // 페이로드 읽기
-    asio::async_read(socket, asio::buffer(pkt->payload.data(), size),
-    [this, pkt](boost::system::error_code error, size_t length)
+    auto self = shared_from_this();
+    boost::asio::async_read(socket, boost::asio::buffer(current_pkt->payload.data(), current_pkt->header.payload_size),
+    [this, self](boost::system::error_code error, size_t /*length*/)
     {
         if (error)
         {
@@ -88,12 +94,32 @@ void net::core::session::async_read_payload(std::shared_ptr<packet::packet> pkt)
             return;
         }
 
-        // 패킷 식별자 추출
-        auto id = pkt->header.id;
-        auto decoded_payload = packet::packet_serializer_map[id](pkt->payload, length);
-        recv_buffer.push_back(packet::packet_request(id, decoded_payload));
+        auto request = packet::deserialize
+        (
+            current_pkt->header.type,
+            session_id,
+            current_pkt->payload,
+            current_pkt->header.payload_size
+        );
+        server_recv_buffer.push_back(std::move(request));
 
-        // 다음 패킷을 읽기 위해 순환
         async_read_header();
+    });
+}
+
+void net::core::session::send(packet::packet_type type, std::shared_ptr<google::protobuf::Message> payload)
+{
+    auto serialized = packet::serialize(type, *payload);
+
+    auto buffer = std::make_shared<std::vector<uint8_t>>(std::move(serialized));
+
+    auto self = shared_from_this();
+    boost::asio::async_write(socket, boost::asio::buffer(*buffer),
+    [self, buffer](boost::system::error_code error, size_t /*length*/)
+    {
+        if (error)
+        {
+            std::cout << "session::send() error: " << error.message() << std::endl;
+        }
     });
 }

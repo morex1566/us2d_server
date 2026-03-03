@@ -19,11 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="def.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="session.h" />
-    <ClInclude Include="tcp_client.h" />
-    <ClInclude Include="tcp_server.h" />
+    <ClInclude Include="tcp.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -33,8 +31,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="session.cpp" />
-    <ClCompile Include="tcp_client.cpp" />
-    <ClCompile Include="tcp_server.cpp" />
+    <ClCompile Include="tcp.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
