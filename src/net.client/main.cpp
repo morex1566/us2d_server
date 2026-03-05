@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "tcp.h"
 #include "logic.h"
-#include "dispatcher.h"
-
 #define IP "192.168.0.3"
 #define TCP_PORT 60000
 #define UDP_PORT 50000
@@ -19,8 +17,6 @@ int main()
 	);
 
 	client.start();
-
-	dispatcher packet_dispatcher(2);
 
 	return 0;
 }

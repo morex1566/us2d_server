@@ -24,12 +24,14 @@ namespace net::common
         bool get(const key_t& key, value_t& out_value) const
         {
             std::shared_lock<std::shared_mutex> lock(map_mutex);
+
             auto it = map_data.find(key);
             if (it != map_data.end())
             {
                 out_value = it->second;
                 return true;
             }
+
             return false;
         }
 
@@ -37,28 +39,36 @@ namespace net::common
         value_t find(const key_t& key) const
         {
             std::shared_lock<std::shared_mutex> lock(map_mutex);
+
             auto it = map_data.find(key);
             if (it != map_data.end())
             {
                 return it->second;
             }
+
             return value_t();
         }
 
         void erase(const key_t& key)
         {
-            std::unique_lock<std::shared_mutex> lock(map_mutex);
+            std::scoped_lock<std::shared_mutex> lock(map_mutex);
+
             map_data.erase(key);
         }
 
         bool contains(const key_t& key) const
         {
             std::shared_lock<std::shared_mutex> lock(map_mutex);
+
             return map_data.find(key) != map_data.end();
         }
 
     private:
         std::unordered_map<key_t, value_t> map_data;
+
+        /// <summary>
+        /// 읽기 모드 lock X 구현.
+        /// </summary>
         mutable std::shared_mutex map_mutex;
     };
 }

@@ -1,8 +1,7 @@
 #pragma once
-#include "session.h"
-#include "ts_deque.h"
+#include "connection.h"
 #include "ts_map.h"
-#include "ts_pool.h"
+#include "concurrentqueue/concurrentqueue.h"
 
 namespace net::core
 {
@@ -14,7 +13,7 @@ namespace net::core
 	class tcp
 	{
 	public:
-		enum class role 
+		enum class mode 
 		{ 
 			server, 
 			client 
@@ -48,9 +47,6 @@ namespace net::core
 		// 현재 실행 중인지 여부
 		bool is_active() const { return is_running; }
 
-		// [서버 전용] 특정 세션에 패킷 전송
-		void send(uint64_t session_id, packet::packet_type type, std::shared_ptr<google::protobuf::Message> payload);
-
 	private:
 
 		// 서버 모드
@@ -62,7 +58,7 @@ namespace net::core
 	private:
 
 		// 역할 (서버 / 클라이언트)
-		role role_;
+		mode mode;
 
 		// 실행 여부
 		std::atomic<bool> is_running{ false };
@@ -82,18 +78,17 @@ namespace net::core
 		// 접속 대상 엔드포인트
 		boost::asio::ip::tcp::endpoint endpoint;
 
-		// [서버 전용] acceptor
+		// acceptor
 		std::optional<boost::asio::ip::tcp::acceptor> acceptor;
 
-		// [서버 전용] 세션 uid 카운터
+		// 세션 uid 카운터
 		std::atomic<uint64_t> session_id_counter{ 10000 };
 
-		// [서버 전용] 세션 관리 맵
-		common::ts_map<uint64_t, std::shared_ptr<session>> sessions;
+		// 세션 관리 맵
+		common::ts_map<uint64_t, std::shared_ptr<connection>> sessions;
 
-		std::shared_ptr<common::ts_pool<packet::packet>> packet_pool;
-
-		// 수신 버퍼
-		common::ts_deque<packet::packet_request> recv_buffer;
+		common::ts_memory_pool memory_pool;
+		
+		moodycamel::ConcurrentQueue<void*> recv_queue;
 	};
 }

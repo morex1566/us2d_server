@@ -1,28 +1,20 @@
 #include "pch.h"
 #include "tcp.h"
 
-// ─────────────────────────────────────────────
-// 서버 모드 생성자
-// ─────────────────────────────────────────────
 net::core::tcp::tcp(boost::asio::ip::port_type port)
-	: role_(role::server),
+	: mode(mode::server),
 	  socket(context),
 	  endpoint(boost::asio::ip::tcp::v4(), port),
-	  work_guard(boost::asio::make_work_guard(context)),
-      packet_pool(std::make_shared<common::ts_pool<packet::packet>>())
+	  work_guard(boost::asio::make_work_guard(context))
 {
 	acceptor.emplace(context, endpoint);
 }
 
-// ─────────────────────────────────────────────
-// 클라이언트 모드 생성자
-// ─────────────────────────────────────────────
 net::core::tcp::tcp(const std::string& host, boost::asio::ip::port_type port)
-	: role_(role::client),
+	: mode(mode::client),
 	  socket(context),
 	  endpoint(boost::asio::ip::make_address(host), port),
-	  work_guard(boost::asio::make_work_guard(context)),
-	  packet_pool(std::make_shared<common::ts_pool<packet::packet>>())
+	  work_guard(boost::asio::make_work_guard(context))
 {
 }
 
@@ -32,14 +24,11 @@ net::core::tcp::~tcp()
 	clear();
 }
 
-// ─────────────────────────────────────────────
-// start
-// ─────────────────────────────────────────────
 void net::core::tcp::start()
 {
 	is_running = true;
 
-	if (role_ == role::server)
+	if (mode == mode::server)
 	{
 		std::cout << "tcp server::start() - port: " << endpoint.port() << "\n";
 		async_accept();
@@ -57,9 +46,6 @@ void net::core::tcp::start()
 	});
 }
 
-// ─────────────────────────────────────────────
-// stop
-// ─────────────────────────────────────────────
 void net::core::tcp::stop()
 {
 	is_running = false;
@@ -72,9 +58,6 @@ void net::core::tcp::stop()
 	}
 }
 
-// ─────────────────────────────────────────────
-// clear
-// ─────────────────────────────────────────────
 void net::core::tcp::clear()
 {
 	if (socket.is_open())
@@ -88,39 +71,25 @@ void net::core::tcp::clear()
 	}
 }
 
-// ─────────────────────────────────────────────
-// send [서버 전용]
-// ─────────────────────────────────────────────
-void net::core::tcp::send(uint64_t session_id, packet::packet_type type, std::shared_ptr<google::protobuf::Message> payload)
-{
-	std::shared_ptr<session> target_session;
-
-	if (sessions.get(session_id, target_session))
-	{
-		target_session->send(type, payload);
-	}
-	else
-	{
-		std::cout << "tcp::send() - session not found: " << session_id << std::endl;
-	}
-}
-
-// ─────────────────────────────────────────────
-// async_accept [서버 모드]
-// ─────────────────────────────────────────────
 void net::core::tcp::async_accept()
 {
+	if (mode == tcp::mode::client)
+	{
+		std::cout << "tcp mode is client." << std::endl;
+		return;
+	}
+
 	acceptor->async_accept([this](boost::system::error_code error, boost::asio::ip::tcp::socket client_socket)
 	{
 		if (!error)
 		{
 			// 세션 추가
 			const uint64_t new_session_id = session_id_counter++;
-			auto new_session = std::make_shared<session>
+			auto new_session = std::make_shared<connection>
 			(
 				context,
-				packet_pool,
-				recv_buffer,
+				memory_pool,
+				recv_queue,
 				std::move(client_socket),
 				new_session_id
 			);
@@ -141,22 +110,25 @@ void net::core::tcp::async_accept()
 	});
 }
 
-// ─────────────────────────────────────────────
-// async_connect [클라이언트 모드]
-// ─────────────────────────────────────────────
 void net::core::tcp::async_connect()
 {
+	if (mode == tcp::mode::server)
+	{
+		std::cout << "tcp mode is server." << std::endl;
+		return;
+	}
+
 	socket.async_connect(endpoint, [this](const boost::system::error_code& error)
 	{
 		if (!error)
 		{
 			// 세션 추가
-			const uint64_t new_session_id = session_id_counter++;
-			auto new_session = std::make_shared<session>
+			const uint64_t new_session_id = session_id_counter.fetch_add(1, std::memory_order::memory_order_release);
+			auto new_session = std::make_shared<connection>
 			(
 				context,
-				packet_pool,
-				recv_buffer,
+				memory_pool,
+				recv_queue,
 				std::move(socket),
 				new_session_id
 			);

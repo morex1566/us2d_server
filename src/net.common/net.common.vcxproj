@@ -141,23 +141,21 @@
   <ItemGroup>
     <ClInclude Include="input.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="ts_deque.h" />
+    <ClInclude Include="system_config.h" />
     <ClInclude Include="ts_map.h" />
-    <ClInclude Include="ts_pool.h" />
-    <ClInclude Include="ts_ring.h" />
+    <ClInclude Include="ts_memory_pool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="system_config.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="ts_deque.cpp" />
     <ClCompile Include="ts_map.cpp" />
-    <ClCompile Include="ts_pool.cpp" />
-    <ClCompile Include="ts_ring.cpp" />
+    <ClCompile Include="ts_memory_pool.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

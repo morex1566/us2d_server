@@ -80,7 +80,7 @@ You use korean all of conversation.
 
 ## Code Convention
 
-1. 괄호는 항상 아래로 내려 쓰기. 단 매우 짧은 { return null; } 이런 경우는 옆으로 쓰기
+1. 괄호는 항상 아래로 내려 쓰기.
 
 2. 맴버 변수 등 모든 변수는 스네일 케이스 소문자만 사용 ex. int value_type
 
@@ -131,7 +131,28 @@ socket_.async_connect(endpoint_, [this](const boost::system::error_code& error)
     }
 });
 
-6. 주석은 선언부일 경우 /// xml 태그 주석을 사용. 단 오직 <summary>만
+6. 주석은 함수 선언부, 클래스 맴버변수 일 경우 /// xml 태그 주석을 사용. 단 오직 <summary>만.
 정의부에는 일반 // 주석을 사용
+
+ex.
+
+/// <summary>
+/// 슬랩 할당 기반 raw 바이트 블록 메모리 풀 (Thread-safe)
+/// </summary>
+const size_t slab_block_size;
+
+/// <summary>
+/// 슬롯 하나 대여 (소멸 시 자동 반환, fallback heap 포함)
+/// </summary>
+std::shared_ptr<uint8_t> acquire();
+
+void net::core::tcp::start()
+{
+	// IOCP 이벤트 루프 별도 스레드에서 실행
+	context_worker = std::thread([this]()
+	{
+		context.run();
+	});
+}
 
 7. 정의부에서 코드는 맥락상 같은 내용이면 코드 라인을 띄어쓰지 않고 마치 블럭 단위처럼 쓰게함

@@ -18,19 +18,16 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ts_deque.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ts_ring.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="system_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ts_map.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ts_pool.h">
+    <ClInclude Include="ts_memory_pool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,19 +35,16 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ts_deque.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ts_ring.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="input.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="system_config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ts_map.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ts_pool.cpp">
+    <ClCompile Include="ts_memory_pool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
