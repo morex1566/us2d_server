@@ -56,14 +56,24 @@ namespace net::common
             static constexpr double memory_alloc_limit_percent = 80.f;
 
             /// <summary>
-            /// 바이트 단위 (메모리 낭비 감소를 위해 16바이트 정렬)
+            /// 예상 최대 동시 접속자 수
             /// </summary>
-            static constexpr size_t default_segment_alignment = 16;
+            static constexpr size_t expected_ccu = 1000;
 
             /// <summary>
-            /// 동접자 1024명이 사용할 수 있는 크기
+            /// 1인당 예상 메모리 제공량 (8KB)
             /// </summary>
-            static constexpr size_t default_segment_size = static_cast<size_t>(session::packets_per_user) * 1024;
+            static constexpr size_t pool_capacity_per_user = 8192;
+            
+            /// <summary>
+            /// 메모리 풀 정렬 단위
+            /// </summary>
+            static constexpr size_t pool_alignment = 16;
+
+            /// <summary>
+            /// 초기 풀 전체 용량
+            /// </summary>
+            static constexpr size_t default_pool_capacity = expected_ccu * pool_capacity_per_user;
         };
     };
 

@@ -24,8 +24,7 @@ namespace net::common
         status.dwLength = sizeof(status);
         GlobalMemoryStatusEx(&status);
         // 전체 대비 사용 가능한 비율
-        return 100.0 * static_cast<double>(status.ullAvailPhys)
-            / static_cast<double>(status.ullTotalPhys);
+        return 100.0 * static_cast<double>(status.ullAvailPhys) / static_cast<double>(status.ullTotalPhys);
     }
 
     double system_config::cpu_usage_percent()

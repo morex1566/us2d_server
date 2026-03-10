@@ -17,5 +17,10 @@ int main()
 
 	server.start();
 
+	while (server.is_active())
+	{
+		// 폴링할 로직
+	}
+
 	return 0;
 }

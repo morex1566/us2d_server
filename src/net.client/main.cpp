@@ -18,5 +18,10 @@ int main()
 
 	client.start();
 
+	while (client.is_active())
+	{
+		// 폴링할 로직
+	}
+
 	return 0;
 }

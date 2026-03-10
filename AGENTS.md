@@ -71,12 +71,12 @@ Be pragmatic. Be reliable. Self-anneal.
 
 ## Language
 
-You use korean all of conversation.
+모든 계획, 리뷰, 대화는 한국어로 설명, 작성하셈.
 
 
 ## About implement
 
-파일 수정하기전에 꼭 수동으로 수정할것인지 여부를 물어볼것
+파일 수정을 금지함. 구현 사항만 보여줄 것.
 
 ## Code Convention
 

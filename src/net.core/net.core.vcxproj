@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="session.h" />
+    <ClInclude Include="connection.h" />
     <ClInclude Include="tcp.h" />
   </ItemGroup>
   <ItemGroup>
@@ -30,7 +30,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="session.cpp" />
+    <ClCompile Include="connection.cpp" />
     <ClCompile Include="tcp.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

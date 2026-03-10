@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "logic.h"
-#include "session.h"
+#include "connection.h"
 #include "tcp.h"
 
 namespace net::logic
