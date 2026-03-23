@@ -140,13 +140,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="input.h" />
+    <ClInclude Include="logger.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="singleton.h" />
     <ClInclude Include="system_config.h" />
     <ClInclude Include="ts_map.h" />
     <ClInclude Include="ts_memory_pool.h" />
+    <ClInclude Include="unit.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="logger.cpp" />
+    <ClCompile Include="singleton.cpp" />
     <ClCompile Include="system_config.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

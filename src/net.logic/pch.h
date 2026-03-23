@@ -20,7 +20,9 @@
 #include <atomic>
 #include <functional>
 #include <unordered_map>
-#include "google/protobuf/message.h"
+
+#include "logger.h"
 #include "boost/asio.hpp"
+#include "spdlog/spdlog.h"
 
 #endif //PCH_H

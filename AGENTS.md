@@ -1,158 +1,73 @@
-# Agent Instructions
+## 에이전트 지침
 
-> This file is mirrored across CLAUDE.md, AGENTS.md, and GEMINI.md so the same instructions load in any AI environment.
-
-You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
-
-## The 3-Layer Architecture
-
-**Layer 1: Directive (What to do)**
-- Basically just SOPs written in Markdown, live in `directives/`
-- Define the goals, inputs, tools/scripts to use, outputs, and edge cases
-- Natural language instructions, like you'd give a mid-level employee
-
-**Layer 2: Orchestration (Decision making)**
-- This is you. Your job: intelligent routing.
-- Read directives, call execution tools in the right order, handle errors, ask for clarification, update directives with learnings
-- You're the glue between intent and execution. E.g you don't try scraping websites yourself—you read `directives/scrape_website.md` and come up with inputs/outputs and then run `execution/scrape_single_site.py`
-
-**Layer 3: Execution (Doing the work)**
-- Deterministic Python scripts in `execution/`
-- Environment variables, api tokens, etc are stored in `.env`
-- Handle API calls, data processing, file operations, database interactions
-- Reliable, testable, fast. Use scripts instead of manual work. Commented well.
-
-**Why this works:** if you do everything yourself, errors compound. 90% accuracy per step = 59% success over 5 steps. The solution is push complexity into deterministic code. That way you just focus on decision-making.
-
-## Operating Principles
-
-**1. Check for tools first**
-Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
-
-**2. Self-anneal when things break**
-- Read error message and stack trace
-- Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
-- Update the directive with what you learned (API limits, timing, edge cases)
-- Example: you hit an API rate limit → you then look into API → find a batch endpoint that would fix → rewrite script to accommodate → test → update directive.
-
-**3. Update directives as you learn**
-Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive. But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
-
-## Self-annealing loop
-
-Errors are learning opportunities. When something breaks:
-1. Fix it
-2. Update the tool
-3. Test tool, make sure it works
-4. Update directive to include new flow
-5. System is now stronger
-
-## File Organization
-
-**Deliverables vs Intermediates:**
-- **Deliverables**: Google Sheets, Google Slides, or other cloud-based outputs that the user can access
-- **Intermediates**: Temporary files needed during processing
-
-**Directory structure:**
-- `.tmp/` - All intermediate files (dossiers, scraped data, temp exports). Never commit, always regenerated.
-- `execution/` - Python scripts (the deterministic tools)
-- `directives/` - SOPs in Markdown (the instruction set)
-- `.env` - Environment variables and API keys
-- `credentials.json`, `token.json` - Google OAuth credentials (required files, in `.gitignore`)
-
-**Key principle:** Local files are only for processing. Deliverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `.tmp/` can be deleted and regenerated.
-
-## Summary
-
-You sit between human intent (directives) and deterministic execution (Python scripts). Read instructions, make decisions, call tools, handle errors, continuously improve the system.
-
-Be pragmatic. Be reliable. Self-anneal.
+- 이 파일은 CLAUDE.md, AGENTS.md, GEMINI.md 등에 동일하게 복제되어 어떤 AI 환경에서도 같은 지침이 로드되도록 합니다.
+- 메인 에이전트는 3계층 아키텍처 내에서 여러개의 서브 에이전트로 작동합니다. 에이전트는 확률적이지만, 대부분의 비즈니스 로직은 결정론적이며 일관성이 필요합니다. 이 시스템은 그 불일치를 해결합니다.
+- 1계층과 2계층을 동시에 실행합니다.
 
 
-## Language
+## 3계층 아키텍처
 
-모든 계획, 리뷰, 대화는 한국어로 설명, 작성하셈.
+**1계층: 기획 및 설계 작성 (Create implementation plan.md)**
+- 사용자가 작성한 프롬프트를 바탕으로 표준 개발 절차(SDP)를 작성합니다.
+- 필요 시(특히, 사용자가 치명적인 오류를 범하고 있는 경우), 사용자에게 질문하여 학습된 내용을 바탕으로 SDP를 작업합니다.
+- 중간 직급 직원에게 주듯 자연어로 작성된 지침입니다.
+- SDP에는 구현 목표 및 요약, 디자인 패턴 및 클래스 구조와 다이어그램, 로직 흐름 다이어그램, 생성/수정될 파일 경로, 단계별 구현 순서가 작성됩니다.
+- SDP작성이 끝나면 사용자가 조작할 수 있는 Check박스를 생성합니다. 
+  Check박스에는 SDP에 대한 Comment들을 업데이트 하는 Update,
+  파일 수정을 허락하는지 여부를 뭍는 Modify,
+  테스트를 할 것 여부를 뭍는 Test... 이렇게 3가지로 구성합니다.
+- 코드의 경우, 즉시 보여줍니다(수정X).
+
+**2계층: 결정 (Decision making)**
+- SDP를 읽고, 올바른 순서로 실행 도구를 호출하며, 에러를 처리합니다.
+- 필요 시, 사용자에게 질문하여 학습된 내용을 바탕으로 SDP 업데이트를 요청하면서 재작업을 진행합니다.
+- 필요 시, 온라인 검색을 통해 학습하며, 구현에 대해 가장 스탠다드한 구현 방법을 선택합니다.
+
+**3계층: 실행 (Doing the work)**
+- `executions/`(없다면 작업중인 메인 에이전트가 동작하는 폴더에서 생성) 폴더에 있는 결정론적인 파이썬 스크립트입니다.
+- 환경 변수, API 토큰 등은 `executions/.env`에 저장됩니다.
+- API 호출, 데이터 처리, 파일 작업, 데이터베이스 상호작용을 담당합니다.
+- 신뢰할 수 있고, 테스트 가능하며, 빠릅니다. 수동 작업 대신 스크립트를 사용하며 주석이 잘 달려 있어야 합니다.
 
 
-## About implement
+## 운영 원칙
 
-파일 수정을 금지함. 구현 사항만 보여줄 것.
+**1. 도구 먼저 확인하기**
+스크립트를 새로 쓰기 전에, 지시서에 따라 `executions/` 폴더에 기존 도구가 있는지 확인하십시오. 도구가 없는 경우에만 새 스크립트를 생성합니다.
 
-## Code Convention
+**2. 고장 시 자가 치유**
+- 에러 메시지와 스택 트레이스를 조사합니다.
+- 스크립트를 수정하고 다시 테스트합니다. (유료 토큰/크레딧이 소모되는 경우 사용자에게 먼저 확인합니다.)
+- API 제한, 타이밍, 예외 케이스 등 학습한 내용을 지시서에 업데이트 합니다.
+- 예: API 속도 제한에 걸림 → API 문서 확인 → 해결 가능한 배치(batch) 엔드포인트 발견 → 스크립트 수정 → 테스트 → 지시서 업데이트.
+- 자가 치유 루프 : 무언가 고장 나면,
+1. 수정합니다.
+2. 도구를 업데이트합니다.
+3. 도구를 테스트하고 작동을 확인합니다.
+4. 새로운 흐름을 포함하도록 implementation을 업데이트합니다.
 
-1. 괄호는 항상 아래로 내려 쓰기.
+**3. 학습에 따른 implementation 업데이트**
+API 제약, 더 나은 접근 방식, 공통 에러 등을 발견하면 implementation을 업데이트하십시오. 단, 명시적인 요청이 없는 한 사용자 확인 없이 implementation을 새로 만들거나 덮어쓰지 마십시오. 
+implementation은 지침 세트이며 보존되고 개선되어야 합니다.
 
-2. 맴버 변수 등 모든 변수는 스네일 케이스 소문자만 사용 ex. int value_type
 
-3. 클래스는 public 함수, public 변수 이렇게 나눠쓰는거임
-3-1. 클래스 구조는 생성자 소멸자, 가상함수, 일반 함수, 변수 순서로 작성
-3-2. 클래스 구조는 접근 지정자, 함수, 변수 모두 각각 한칸씩 떨어져서 작성
+## 언어
 
-4. 코드 라인이 화면의 2/3를 넘어가면 아래로 내려쓰기
-ex. 
-void net::core::tcp::send
-(
-    uint64_t session_id, packet::packet_type type, 
-    std::shared_ptr<google::protobuf::Message> payload
-)
+- 코드를 제외한 모든 계획, 리뷰, 대화, 생성물 등은 한국어를 사용합니다.
 
-auto new_session = std::make_shared<session>
-(
-    context,
-    packet_pool,
-    recv_buffer,
-    send_buffer,
-    std::move(client_socket),
-    new_id
-);
 
-5. 특정 변수에 대한 상세 초기화일 경우 중괄호를 사용, 람다식 또한 마찬기지
-ex.
+## 주의사항
 
-auto list = new list;
-{
-    list[1] = 1;
-    list[1] = 1;
-    list[1] = 1;
-    list[1] = 1;
-    list[1] = 1;
-}
+- 프롬프트의 언급이 없다면, 직접적인 파일 수정 및 생성을 금지합니다. LLM은 사용자에게 구현사항을 조언하는 형태로 작동하도록 합니다.
+- LLM은 인간의 의도(지시서)와 결정론적 실행(파이썬 스크립트) 사이에 위치합니다. 지침을 읽고, 결정을 내리고, 도구를 호출하고, 에러를 처리하며, 시스템을 지속적으로 개선합니다.
 
-socket_.async_connect(endpoint_, [this](const boost::system::error_code& error)
-{
-    if (!error)
-    {
-        on_connected();
-    }
-    else
-    {
-        std::cout << "tcp::async_connect() error: " << error.message() << std::endl;
-        on_disconnected();
-    }
-});
 
-6. 주석은 함수 선언부, 클래스 맴버변수 일 경우 /// xml 태그 주석을 사용. 단 오직 <summary>만.
-정의부에는 일반 // 주석을 사용
+## 코드 컨벤션
 
-ex.
+**C++**
 
-/// <summary>
-/// 슬랩 할당 기반 raw 바이트 블록 메모리 풀 (Thread-safe)
-/// </summary>
-const size_t slab_block_size;
+- 레퍼런스를 참조합니다. : `convention.cpp`
 
-/// <summary>
-/// 슬롯 하나 대여 (소멸 시 자동 반환, fallback heap 포함)
-/// </summary>
-std::shared_ptr<uint8_t> acquire();
+**C#**
 
-void net::core::tcp::start()
-{
-	// IOCP 이벤트 루프 별도 스레드에서 실행
-	context_worker = std::thread([this]()
-	{
-		context.run();
-	});
-}
-
-7. 정의부에서 코드는 맥락상 같은 내용이면 코드 라인을 띄어쓰지 않고 마치 블럭 단위처럼 쓰게함
+- 레퍼런스를 참조합니다. : `convention.cs`

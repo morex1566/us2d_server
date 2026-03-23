@@ -18,6 +18,12 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="admin_generated.h" />
+    <ClInclude Include="client_generated.h" />
+    <ClInclude Include="packet.h" />
+    <ClInclude Include="packet_generated.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -158,18 +164,6 @@
       <AdditionalDependencies>net.common.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="chat.pb.h" />
-    <ClInclude Include="packet.h" />
-    <ClInclude Include="server_stats.pb.h" />
-    <ClInclude Include="transformation.pb.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="chat.pb.cc" />
-    <ClCompile Include="packet.cpp" />
-    <ClCompile Include="server_stats.pb.cc" />
-    <ClCompile Include="transformation.pb.cc" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

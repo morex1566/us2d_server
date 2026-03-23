@@ -18,28 +18,14 @@
     <ClInclude Include="packet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="server_stats.pb.h">
+    <ClInclude Include="admin_generated.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="transformation.pb.h">
+    <ClInclude Include="client_generated.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="chat.pb.h">
+    <ClInclude Include="packet_generated.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="packet.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="server_stats.pb.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="transformation.pb.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="chat.pb.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

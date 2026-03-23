@@ -1,145 +1,103 @@
 #include "pch.h"
 #include "ts_memory_pool.h"
-#ifdef _WIN32
-#include <malloc.h>
-#else
-#include <stdlib.h>
-#define _aligned_malloc(size, alignment) aligned_alloc(alignment, size)
-#define _aligned_free(ptr) free(ptr)
-#endif
 
 namespace net::common
 {
     ts_memory_pool::ts_memory_pool()
-        : capacity(system_config::ts_memory_pool::default_pool_capacity), front(0), back(0)
     {
-        buffer = static_cast<uint8_t*>(_aligned_malloc(capacity, system_config::ts_memory_pool::pool_alignment));
+        initialize_pool(pool_64b, system_config::ts_memory_pool::pool_64b_count);
+        initialize_pool(pool_128b, system_config::ts_memory_pool::pool_128b_count);
+        initialize_pool(pool_256b, system_config::ts_memory_pool::pool_256b_count);
+        initialize_pool(pool_512b, system_config::ts_memory_pool::pool_512b_count);
+        initialize_pool(pool_1024b, system_config::ts_memory_pool::pool_1024b_count);
+        initialize_pool(pool_2048b, system_config::ts_memory_pool::pool_2048b_count);
+        initialize_pool(pool_4096b, system_config::ts_memory_pool::pool_4096b_count);
     }
 
     ts_memory_pool::~ts_memory_pool()
     {
-        if (buffer)
+        // 풀에 남아 있는 모든 블록들을 안전하게 해제합니다.
+        block64* b64; while (pool_64b.pop(b64)) delete b64;
+        block128* b128; while (pool_128b.pop(b128)) delete b128;
+        block256* b256; while (pool_256b.pop(b256)) delete b256;
+        block512* b512; while (pool_512b.pop(b512)) delete b512;
+        block1024* b1024; while (pool_1024b.pop(b1024)) delete b1024;
+        block2048* b2048; while (pool_2048b.pop(b2048)) delete b2048;
+        block4096* b4096; while (pool_4096b.pop(b4096)) delete b4096;
+    }
+
+    std::shared_ptr<uint8_t> ts_memory_pool::rent(size_t size)
+    {
+        if (size <= 64)
         {
-            _aligned_free(buffer);
+            block64* block = pop(pool_64b);
+            if (!block && can_allocate_dynamic()) block = new block64();
+            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
+                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block64*>(p), pool_64b)) delete reinterpret_cast<block64*>(p); });
+        }
+        else if (size <= 128)
+        {
+            block128* block = pop(pool_128b);
+            if (!block && can_allocate_dynamic()) block = new block128();
+            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
+                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block128*>(p), pool_128b)) delete reinterpret_cast<block128*>(p); });
+        }
+        else if (size <= 256)
+        {
+            block256* block = pop(pool_256b);
+            if (!block && can_allocate_dynamic()) block = new block256();
+            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
+                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block256*>(p), pool_256b)) delete reinterpret_cast<block256*>(p); });
+        }
+        else if (size <= 512)
+        {
+            block512* block = pop(pool_512b);
+            if (!block && can_allocate_dynamic()) block = new block512();
+            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
+                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block512*>(p), pool_512b)) delete reinterpret_cast<block512*>(p); });
+        }
+        else if (size <= 1024)
+        {
+            block1024* block = pop(pool_1024b);
+            if (!block && can_allocate_dynamic()) block = new block1024();
+            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
+                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block1024*>(p), pool_1024b)) delete reinterpret_cast<block1024*>(p); });
+        }
+        else if (size <= 2048)
+        {
+            block2048* block = pop(pool_2048b);
+            if (!block && can_allocate_dynamic()) block = new block2048();
+            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
+                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block2048*>(p), pool_2048b)) delete reinterpret_cast<block2048*>(p); });
+        }
+        else if (size <= 4096)
+        {
+            block4096* block = pop(pool_4096b);
+            if (!block && can_allocate_dynamic()) block = new block4096();
+            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
+                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block4096*>(p), pool_4096b)) delete reinterpret_cast<block4096*>(p); });
+        }
+
+        SPDLOG_ERROR("memory rent failed. size: {}, is out of limit?", size);
+        return nullptr;
+    }
+
+    template<typename block_type>
+    void ts_memory_pool::initialize_pool(boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack, size_t count)
+    {
+        for (size_t i = 0; i < count; ++i) 
+        {
+            block_type* block = new block_type();
+            if (!stack.push(block)) 
+            {
+                delete block;
+            }
         }
     }
 
-    void* ts_memory_pool::acquire(void* ptr, int size)
+    bool ts_memory_pool::can_allocate_dynamic()
     {
-        size_t alignment = system_config::ts_memory_pool::pool_alignment;
-        size_t header_size = align_up(sizeof(block_header), alignment);
-        size_t total_size = align_up(header_size + size, alignment);
-
-        while (true)
-        {
-            uint64_t current_back = back.load(std::memory_order_relaxed);
-            uint64_t current_front = front.load(std::memory_order_acquire);
-            size_t pos = static_cast<size_t>(current_back % capacity);
-
-            // 여유 공간 검사 (부족하면 힙 할당으로 fallback)
-            if (current_back - current_front + total_size > capacity || pos + total_size > capacity)
-            {
-                return acquire_fallback(ptr, size, total_size, header_size);
-            }
-
-            // 실제 할당 시도
-            if (back.compare_exchange_strong(current_back, current_back + total_size, std::memory_order_acq_rel))
-            {
-                return acquire_block(pos, total_size, ptr, size, header_size);
-            }
-        }
-    }
-
-    void ts_memory_pool::release(void* ptr)
-    {
-        // 1. 주소 유효성 검사
-        if (!ptr)
-        {
-            return;
-        }
-
-        auto header_size = align_up(sizeof(block_header), system_config::ts_memory_pool::pool_alignment);
-        auto header = reinterpret_cast<block_header*>(static_cast<uint8_t*>(ptr) - header_size);
-
-        // 2. Fallback 할당 직접 처리
-        if (header->is_fallback)
-        {
-            _aligned_free(header);
-            return;
-        }
-
-        // 3. 링버퍼 블록 해제 마킹 및 Front 전진 시도
-        header->is_released.store(true, std::memory_order_release);
-
-        uint64_t current_front = front.load(std::memory_order_acquire);
-        while (current_front < back.load(std::memory_order_acquire))
-        {
-            auto curr = reinterpret_cast<block_header*>(buffer + (current_front % capacity));
-
-            if (!curr->is_released.load(std::memory_order_acquire))
-            {
-                break;
-            }
-
-            uint32_t block_size = curr->size;
-            if (front.compare_exchange_strong(current_front, current_front + block_size))
-            {
-                current_front += block_size;
-                continue;
-            }
-
-            break;
-        }
-    }
-
-    void* ts_memory_pool::acquire_block(size_t pos, size_t total_size, void* src, int src_size, size_t header_size)
-    {
-        block_header* header = reinterpret_cast<block_header*>(buffer + pos);
-        {
-            header->size = static_cast<uint32_t>(total_size);
-            header->is_fallback = false;
-            header->is_released.store(false, std::memory_order_relaxed);
-        }
-
-        void* user_ptr = reinterpret_cast<uint8_t*>(header) + header_size;
-
-        if (src)
-        {
-            memcpy(user_ptr, src, src_size);
-        }
-
-        return user_ptr;
-    }
-
-    void* ts_memory_pool::acquire_fallback(void* src, int src_size, size_t total_size, size_t header_size)
-    {
-        // 시스템 RAM 사용률 상한 체크
-        if (100.0 - system_config::available_ram_percent() > system_config::ts_memory_pool::memory_alloc_limit_percent)
-        {
-            printf("[TsMemoryPool] Error: RAM limit reached. Fallback allocation failed.\n");
-            return nullptr;
-        }
-
-        void* raw = _aligned_malloc(total_size, system_config::ts_memory_pool::pool_alignment);
-        if (!raw)
-        {
-            return nullptr;
-        }
-
-        block_header* header = reinterpret_cast<block_header*>(raw);
-        {
-            header->size = static_cast<uint32_t>(total_size);
-            header->is_fallback = true;
-            header->is_released.store(false, std::memory_order_relaxed);
-        }
-
-        void* user_ptr = reinterpret_cast<uint8_t*>(header) + header_size;
-
-        if (src)
-        {
-            memcpy(user_ptr, src, src_size);
-        }
-
-        return user_ptr;
+        // RAM 사용 80% 미만일 때만 추가 할당
+        return system_config::available_ram_percent() > (100.0 - system_config::connection::memory_alloc_limit_percent);
     }
 }

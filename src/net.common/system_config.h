@@ -1,12 +1,12 @@
 #pragma once
-
+#include "unit.h"
 #include <cstdint>
 
 namespace net::common
 {
     /// <summary>
-/// 시스템 하드웨어 상태 조회 유틸리티 (Thread-safe, stateless)
-/// </summary>
+    /// 시스템 하드웨어 상태 조회 유틸리티 (Thread-safe, stateless)
+    /// </summary>
     class system_config
     {
 
@@ -47,7 +47,7 @@ namespace net::common
             static constexpr uint16_t packets_per_user = 128;
         };
 
-        class ts_memory_pool
+        class connection
         {
         public:
             /// <summary>
@@ -61,19 +61,40 @@ namespace net::common
             static constexpr size_t expected_ccu = 1000;
 
             /// <summary>
-            /// 1인당 예상 메모리 제공량 (8KB)
+            /// 1인당 예상 메모리 제공량 (32KB)
             /// </summary>
-            static constexpr size_t pool_capacity_per_user = 8192;
+            static constexpr size_t buffer_size_per_user = 64 * 1024;
+
+            static constexpr size_t queue_size_per_user = 1024;
             
             /// <summary>
             /// 메모리 풀 정렬 단위
             /// </summary>
-            static constexpr size_t pool_alignment = 16;
+            static constexpr size_t buffer_alignment = 16;
 
             /// <summary>
             /// 초기 풀 전체 용량
             /// </summary>
-            static constexpr size_t default_pool_capacity = expected_ccu * pool_capacity_per_user;
+            static constexpr size_t default_buffer_size = expected_ccu * buffer_size_per_user;
+        };
+
+        class ts_memory_pool
+        {
+        public:
+            // 목표 사이즈 / 청크 사이즈 = 개수
+            static constexpr size_t pool_64b_count = (8 * KB) / 64;
+
+            static constexpr size_t pool_128b_count = (16 * KB) / 128;
+
+            static constexpr size_t pool_256b_count = (32 * KB) / 256;
+
+            static constexpr size_t pool_512b_count = (32 * KB) / 512;
+
+            static constexpr size_t pool_1024b_count = (16 * KB) / 1024;
+
+            static constexpr size_t pool_2048b_count = (8 * KB) / 2048;
+
+            static constexpr size_t pool_4096b_count = (8 * KB) / 4096;
         };
     };
 

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="connection.h" />
+    <ClInclude Include="rudp.h" />
     <ClInclude Include="tcp.h" />
   </ItemGroup>
   <ItemGroup>
@@ -31,6 +32,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="connection.cpp" />
+    <ClCompile Include="rudp.cpp" />
     <ClCompile Include="tcp.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -106,7 +108,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>net.common.lib;net.packet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>net.common.lib;net.logic.lib;net.packet.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -120,7 +122,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)src\net.common;$(SolutionDir)src\net.packet;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -148,7 +150,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>net.common.lib;net.packet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>net.common.lib;net.logic.lib;net.packet.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -162,7 +164,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)src\net.common;$(SolutionDir)src\net.packet;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>

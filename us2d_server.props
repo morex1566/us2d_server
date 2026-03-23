@@ -4,6 +4,8 @@
 	<PropertyGroup Label="UserMacros">
 		<ExternalDir>$(SolutionDir)external\</ExternalDir>
 		<ProtobufDir>$(ExternalDir)protobuf\</ProtobufDir>
+		<FlatbufDir>$(ExternalDir)flatbuf\</FlatbufDir>
+		<SpdlogDir>$(ExternalDir)spdlog\</SpdlogDir>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -30,40 +32,40 @@
 			<ExternalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)src;%(ExternalIncludeDirectories)</ExternalIncludeDirectories>
 			
 			<ExternalWarningLevel>Level1</ExternalWarningLevel>
-
-			<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
 		</ClCompile>
 		<Link>
-			<AdditionalLibraryDirectories>$(SolutionDir)lib\$(Platform)\$(Configuration);$(ProtobufDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+			<AdditionalLibraryDirectories>$(SolutionDir)lib\$(Platform)\$(Configuration);$(ProtobufDir);$(FlatbufDir);$(SpdlogDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 			<AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
 		</Link>
 		<Lib>
-			<AdditionalLibraryDirectories>$(SolutionDir)lib\$(Platform)\$(Configuration);$(ProtobufDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+			<AdditionalLibraryDirectories>$(SolutionDir)lib\$(Platform)\$(Configuration);$(ProtobufDir);$(FlatbufDir);$(SpdlogDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 			<AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
 		</Lib>
 	</ItemDefinitionGroup>
 
 	<ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
 		<Link>
-			<AdditionalDependencies>libprotobufd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+			<AdditionalDependencies>libprotobufd.lib;flatbuffersd.lib;spdlogd.lib;%(AdditionalDependencies)</AdditionalDependencies>
 		</Link>
 		<Lib>
-			<AdditionalDependencies>libprotobufd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+			<AdditionalDependencies>libprotobufd.lib;flatbuffersd.lib;spdlogd.lib;%(AdditionalDependencies)</AdditionalDependencies>
 		</Lib>
 		<ClCompile>
 			<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+			<PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 		</ClCompile>
 	</ItemDefinitionGroup>
 
 	<ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
 		<Link>
-			<AdditionalDependencies>libprotobuf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+			<AdditionalDependencies>libprotobuf.lib;flatbuffers.lib;spdlog.lib;%(AdditionalDependencies)</AdditionalDependencies>
 		</Link>
 		<Lib>
-			<AdditionalDependencies>libprotobuf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+			<AdditionalDependencies>libprotobuf.lib;flatbuffers.lib;spdlog.lib;%(AdditionalDependencies)</AdditionalDependencies>
 		</Lib>
 		<ClCompile>
 			<RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+			<PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 		</ClCompile>
 	</ItemDefinitionGroup>
 

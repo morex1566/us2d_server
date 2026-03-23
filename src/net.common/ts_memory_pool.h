@@ -1,102 +1,75 @@
 #pragma once
-#include "pch.h"
 #include "system_config.h"
-#include "concurrentqueue/concurrentqueue.h"
+#include <boost/lockfree/stack.hpp>
 
 namespace net::common
 {
-    /// <summary>
-    /// 메모리 할당 받을 때 같이 붙는 메타 데이터
-    /// </summary>
-    struct block_header
+    class ts_memory_pool 
     {
     public:
-
-        /// <summary>
-        /// 헤더 포함 전체 크기
-        /// </summary>
-        uint32_t size;
-
-        /// <summary>
-        /// 힙 할당 대응
-        /// </summary>
-        bool is_fallback;
-
-        /// <summary>
-        /// 비순차적 해제 대응
-        /// </summary>
-        std::atomic<bool> is_released;
-
-    };
-
-    /// <summary>
-    /// 단일 선형 링버퍼 기반 스레드 안전 메모리 풀
-    /// </summary>
-    class ts_memory_pool
-    {
-    public:
-
         ts_memory_pool();
 
         ~ts_memory_pool();
 
-        ts_memory_pool(const ts_memory_pool&) = delete;
-
-        ts_memory_pool& operator=(const ts_memory_pool&) = delete;
-
-    public:
-
-        /// <summary>
-        /// 사용자 데이터를 풀에서 할당받아 복사하고 주소 반환
-        /// </summary>
-        void* acquire(void* ptr, int size);
-
-        /// <summary>
-        /// 사용자 데이터 해제
-        /// </summary>
-        void release(void* ptr);
+        std::shared_ptr<uint8_t> rent(size_t size);
 
     private:
+        // Internal methods to handle specific block types
+        template<typename block_type>
+        block_type* pop(boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack);
 
-        /// <summary>
-        /// 링버퍼 블록 할당 준비 및 데이터 복사
-        /// </summary>
-        void* acquire_block(size_t pos, size_t total_size, void* src, int src_size, size_t header_size);
+        template<typename block_type>
+        bool push(block_type* ptr, boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack);
 
-        /// <summary>
-        /// 링버퍼가 가득 찼을 경우 시스템 RAM 체크 후 힙 할당
-        /// </summary>
-        void* acquire_fallback(void* src, int src_size, size_t total_size, size_t header_size);
+        // Pre-allocation helper
+        template<typename block_type>
+        void initialize_pool(boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack, size_t count);
+
+        // Dynamic allocation check based on system_config RAM limits
+        bool can_allocate_dynamic();
 
     private:
+        boost::lockfree::stack<block64*, boost::lockfree::fixed_sized<false>> pool_64b
+        { system_config::ts_memory_pool::pool_64b_count };
 
-        /// <summary>
-        /// 실제 메모리 버퍼 시작 주소
-        /// </summary>
-        uint8_t* buffer;
+        boost::lockfree::stack<block128*, boost::lockfree::fixed_sized<false>> pool_128b
+        { system_config::ts_memory_pool::pool_128b_count };
 
-        /// <summary>
-        /// 버퍼 전체 용량
-        /// </summary>
-        size_t capacity;
+        boost::lockfree::stack<block256*, boost::lockfree::fixed_sized<false>> pool_256b
+        { system_config::ts_memory_pool::pool_256b_count };
 
-        /// <summary>
-        /// False Sharing 방지 적용된 할당 해제 인덱스 (Front)
-        /// </summary>
-        alignas(64) std::atomic<uint64_t> front;
+        boost::lockfree::stack<block512*, boost::lockfree::fixed_sized<false>> pool_512b
+        { system_config::ts_memory_pool::pool_512b_count };
 
-        /// <summary>
-        /// False Sharing 방지 적용된 할당 인덱스 (Back)
-        /// </summary>
-        alignas(64) std::atomic<uint64_t> back;
+        boost::lockfree::stack<block1024*, boost::lockfree::fixed_sized<false>> pool_1024b
+        { system_config::ts_memory_pool::pool_1024b_count };
 
+        boost::lockfree::stack<block2048*, boost::lockfree::fixed_sized<false>> pool_2048b
+        { system_config::ts_memory_pool::pool_2048b_count };
+
+        boost::lockfree::stack<block4096*, boost::lockfree::fixed_sized<false>> pool_4096b
+        { system_config::ts_memory_pool::pool_4096b_count };
     };
 
-    /// <summary>
-    /// 정렬 단위에 맞춰 크기 올림 처리
-    /// </summary>
-    inline static size_t align_up(size_t size, size_t alignment)
+    // 1. 필요한 크기에 따른 풀 선택
+    // 2. 스택에서 Pop 시도, 실패 시 동적으로 RAM 한도 내에서 할당
+    // 3. 반환 시 해당 풀로 다시 반입되도록 하는 커스텀 Deleter 설정
+
+
+    template<typename block_type>
+    inline block_type* ts_memory_pool::pop(boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack)
     {
-        return (size + alignment - 1) & ~(alignment - 1);
+        block_type* ptr = nullptr;
+        if (stack.pop(ptr)) return ptr;
+
+
+        return nullptr;
+    }
+
+    template<typename block_type>
+    inline bool ts_memory_pool::push(block_type* ptr, boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack)
+    {
+        return stack.push(ptr);
     }
 }
+

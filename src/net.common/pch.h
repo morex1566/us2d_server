@@ -15,4 +15,7 @@
 #include <type_traits>
 #include <iostream>
 
+#include "boost/asio.hpp"
+#include "spdlog/spdlog.h"
+
 #endif //PCH_H

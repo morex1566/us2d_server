@@ -1,8 +1,9 @@
 #pragma once
-#include <optional>
-#include "packet.h"
+#include "packet_generated.h"
+#include "system_config.h"
 #include "ts_memory_pool.h"
-#include "concurrentqueue/concurrentqueue.h"
+#include <boost/lockfree/queue.hpp>
+#include <boost/circular_buffer.hpp>
 
 namespace net::core
 {
@@ -13,10 +14,9 @@ namespace net::core
 		connection
 		(
 			boost::asio::io_context& context,
-			common::ts_memory_pool& server_memory_pool,
-			moodycamel::ConcurrentQueue<void*>& recv_queue,
 			boost::asio::ip::tcp::socket&& client_socket,
-			uint64_t session_id	
+			uint64_t session_id,
+			net::common::ts_memory_pool memory_pool
 		);
 		
 		connection(const connection&) = delete;
@@ -32,7 +32,9 @@ namespace net::core
 
 		void stop();
 
-		moodycamel::ConcurrentQueue<void*>& get_send_queue() { return send_queue; }
+		boost::lockfree::queue<net::protocol::packet*,
+							   boost::lockfree::capacity<net::common::system_config::connection::queue_size_per_user>,
+							   boost::lockfree::fixed_sized<true>>& get_requests() { return requests; }
 	
 	private:
 
@@ -40,13 +42,19 @@ namespace net::core
 		void async_read_header();
 
 		// packet payload 읽기
-		void async_read_payload();
+		void async_read_payload(std::shared_ptr<uint8_t> full_buffer, uint16_t payload_size);
 
 	private:
 
-		std::atomic<bool> is_running{ false };
+		std::atomic<bool> is_running = false;
+
+		std::atomic<bool> is_writing = false;
+
+		std::atomic<bool> is_reading = false;
 
 		boost::asio::io_context& context;
+
+		boost::asio::strand<boost::asio::io_context::executor_type> strand;
 
 		// 클라이언트 소켓
 		boost::asio::ip::tcp::socket socket;
@@ -54,24 +62,15 @@ namespace net::core
 		// 세션의 고유 id
 		uint64_t session_id;
 
-		/// <summary>
-		/// 페이로드 수신용 메모리 풀 (슬랩 할당)
-		/// </summary>
-		common::ts_memory_pool& server_memory_pool;
+		common::ts_memory_pool& memory_pool;
 
-		/// <summary>
-		/// 클라 -> 서버 수신 큐 (ts_object_pool queue 모드)
-		/// </summary>
-		moodycamel::ConcurrentQueue<void*>& recv_queue;
+		// 고정 크기 헤더 임시 버퍼 (20 bytes)
+		uint8_t header_read_buffer[sizeof(net::protocol::packet_header)];
 
-		/// <summary>
-		/// 수신 패킷 요청 큐
-		/// </summary>
-		moodycamel::ConcurrentQueue<void*> send_queue;
-
-		/// <summary>
-		/// 현재 수신 중인 패킷 헤더 저장용
-		/// </summary>
-		packet::packet curr_packet;
+		// 디스패처가 읽는 부분
+		// TODO : 시퀀스 -> priority queue로 구현?
+		boost::lockfree::queue<net::packet::packet_request, 
+							   boost::lockfree::capacity<net::common::system_config::connection::queue_size_per_user>,
+							   boost::lockfree::fixed_sized<true>> requests;
 	};
 }

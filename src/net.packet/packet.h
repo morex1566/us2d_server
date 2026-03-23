@@ -1,215 +1,85 @@
 #pragma once
-#include <memory>
-#include <vector>
+#include <functional>
 #include <unordered_map>
-#include <concepts>
+#include <cstdint>
 #include <iostream>
-#pragma region include_"google/protoc.generated.h"
-#include "transformation.pb.h"
-#include "server_stats.pb.h"
-#include "chat.pb.h"
-// 여기에 계속해서 protoc파일 헤더 추가 <-----------------
-#pragma endregion
+#include <memory>
+#include <type_traits>
+#include "flatbuffers/flatbuffers.h"
+#include "system_config.h"
+#include "packet_generated.h"
+#include "logger.h"
 
 namespace net::packet
 {
-    template <typename t_packet>
-    concept is_protobuf_message = std::derived_from<t_packet, google::protobuf::Message>;
+    struct packet_request;
+    using packet_handler = std::function<void(std::shared_ptr<packet_request>)>;
 
-    // 패킷 식별 타입
-    enum class packet_type : uint8_t
-    {
-        none,
-
-        // system
-        connected,
-        disconnected,
-
-        // game
-        transformation,
-        chat,
-
-        // admin
-        load_stats
-    };
-
-    // socket async_read() 후, 받은 데이터 스트림 -> google::protobuf 변환
-    // t : protoc.exe로 생성한 패킷 클래스
-    template <typename t>
-    requires is_protobuf_message<t>
-    std::shared_ptr<google::protobuf::Message> deserialize_payload(const std::vector<uint8_t>& stream, uint32_t size)
-    {
-        static_assert
-        (
-            std::is_base_of_v<google::protobuf::Message, t>, "t must derive from google::protobuf::Message"
-        );
-
-        auto msg = std::make_shared<t>();
-
-        // 바이트 스트림 -> 클래스
-        if (!msg->ParseFromArray(stream.data(), size))
-        {
-            std::cout << "data read failed" << std::endl;
-
-            return nullptr;
-        }
-
-        return msg;
-    }
-
-    // raw buffer 기반 오버로드 (ts_memory_pool 슬롯 직접 사용)
-    template <typename t>
-    requires is_protobuf_message<t>
-    std::shared_ptr<google::protobuf::Message> deserialize_payload(const uint8_t* data, uint32_t size)
-    {
-        static_assert
-        (
-            std::is_base_of_v<google::protobuf::Message, t>, "t must derive from google::protobuf::Message"
-        );
-
-        auto msg = std::make_shared<t>();
-
-        if (!msg->ParseFromArray(data, size))
-        {
-            std::cout << "data read failed" << std::endl;
-
-            return nullptr;
-        }
-
-        return msg;
-    }
-
-    // [enum packet.id] 접근, 데이터 스트림 -> google::protobuf 변환 함수 호출 (vector 기반)
-    inline static std::unordered_map<packet_type, std::shared_ptr<google::protobuf::Message>(*)(const std::vector<uint8_t>&, uint32_t)> packet_deserializer_map
-    {
-        { packet_type::transformation, &net::packet::deserialize_payload<transformation> },
-        { packet_type::chat, &net::packet::deserialize_payload<net::protocol::chat> },
-        { packet_type::load_stats, &net::packet::deserialize_payload<server_stats> }
-    };
-
-    // raw buffer 기반 deserializer 맵 (ts_memory_pool 슬롯 직접 사용)
-    inline static std::unordered_map<packet_type, std::shared_ptr<google::protobuf::Message>(*)(const uint8_t*, uint32_t)> packet_raw_deserializer_map
-    {
-        { packet_type::transformation, &net::packet::deserialize_payload<transformation> },
-        { packet_type::chat, &net::packet::deserialize_payload<net::protocol::chat> },
-        { packet_type::load_stats, &net::packet::deserialize_payload<server_stats> }
-    };
-
-#pragma pack(push, 1)
-    struct packet_header
-    {
-    public:
-        /// <summary>
-        /// 패킷 구분용 ex. 공격, 이동, 채팅
-        /// </summary>
-        packet_type type = packet_type::none;
-
-        /// <summary>
-        /// 서버 접근용 토큰
-        /// </summary>
-        uint32_t connection_id = 0;
-
-        /// <summary>
-        /// 패킷 로스 측정용
-        /// </summary>
-        uint32_t seq_num = 0;
-
-        /// <summary>
-        /// 핑 측정용
-        /// </summary>
-        uint32_t timestamp = 0;
-
-        /// <summary>
-        /// payload 로드용
-        /// </summary>
-        uint32_t payload_size = 0;
-
-        /// <summary>
-        /// 데이터 변조 체크용
-        /// </summary>
-        uint8_t check_sum = 0;
-    };
-#pragma pack(pop)
-
-    // 슬랩 슬롯 정렬 맞춤 (캐시 라인 경계, 64바이트)
-    struct alignas(64) packet
-    {
-    public:
-
-        packet_header header;
-
-        std::vector<uint8_t> payload;
-    };
-
-    /// <summary>
-    /// 서버의 recv 버퍼에 큐를 거는 용도
-    /// </summary>
     struct packet_request
     {
-    public:
-        packet_request() = default;
-
-        packet_request(packet_type type, uint64_t id, std::shared_ptr<google::protobuf::Message> payload)
-            : type(type), id(id), payload(payload) { }
-
-        packet_type type;
-
-        uint64_t id;
-
-        std::shared_ptr<google::protobuf::Message> payload;
+        uint16_t packet_id;
+        std::shared_ptr<uint8_t> payload_owner;
+        uint16_t payload_size;
     };
 
-    /// <summary>
-    /// 클라-서버 통신 데이터 (전송용 바이트 스트림 생성 유틸리티)
-    /// </summary>
-    inline std::vector<uint8_t> serialize(packet_type type, const google::protobuf::Message& payload)
+    class packet_dispatcher
     {
-        size_t payload_size = payload.ByteSizeLong();
-        size_t header_size = sizeof(packet_header);
-
-        std::vector<uint8_t> buffer(header_size + payload_size);
-
-        // 헤더 작성
-        packet_header* header = reinterpret_cast<packet_header*>(buffer.data());
-        header->type = type;
-        header->payload_size = static_cast<uint32_t>(payload_size);
-
-        // 페이로드 직렬화
-        if (payload_size > 0)
+    private:
+        // C++ Static Initialization Order Fiasco 방지를 위한 싱글톤 방식 유지
+        static std::unordered_map<unsigned short, packet_handler>& get_handlers()
         {
-            payload.SerializeToArray(buffer.data() + header_size, static_cast<int>(payload_size));
+            static std::unordered_map<unsigned short, packet_handler> handlers;
+            return handlers;
         }
 
-        return buffer;
-    }
-
-    /// <summary>
-    /// 수신된 바이트 스트림을 해석하여 packet_request로 변환
-    /// </summary>
-    inline packet_request deserialize(packet_type type, uint64_t session_id, const std::vector<uint8_t>& stream, uint32_t size)
-    {
-        auto it = packet_deserializer_map.find(type);
-        if (it != packet_deserializer_map.end())
+    public:
+        static void map(unsigned short packet_id, packet_handler handler)
         {
-            auto decoded_payload = it->second(stream, size);
-            return packet_request(type, session_id, decoded_payload);
+            auto& handlers = get_handlers();
+            handlers[packet_id] = std::move(handler);
         }
 
-        return packet_request(packet_type::none, session_id, nullptr);
-    }
-
-    /// <summary>
-    /// raw buffer 기반 deserialization (ts_memory_pool 슬롯 직접 사용)
-    /// </summary>
-    inline packet_request deserialize(packet_type type, uint64_t session_id, const uint8_t* data, uint32_t size)
-    {
-        auto it = packet_raw_deserializer_map.find(type);
-        if (it != packet_raw_deserializer_map.end())
+        static void dispatch(std::shared_ptr<packet_request> req)
         {
-            auto decoded_payload = it->second(data, size);
-            return packet_request(type, session_id, decoded_payload);
+            auto& handlers = get_handlers();
+            if (auto it = handlers.find(req->packet_id); it != handlers.end())
+            {
+                it->second(req);
+            }
+            else
+            {
+                std::cout << "Unhandled packet ID: " << req->packet_id << std::endl;
+            }
         }
+    };
 
-        return packet_request(packet_type::none, session_id, nullptr);
+    // --- 타입 추론을 위한 헬퍼 함수 ---
+    // 핸들러 함수의 매개변수 타입(T)을 자동으로 추론합니다.
+    template<typename packet_type>
+    static void register_typed_handler(unsigned short packet_id, void(*handler_func)(std::shared_ptr<packet_request>, const packet_type*))
+    {
+        packet_dispatcher::map(packet_id, [handler_func](std::shared_ptr<packet_request> request)
+        {
+            const uint8_t* payload_start = request->payload_owner.get() + sizeof(net::protocol::packet_header);
+            const auto* data = flatbuffers::GetRoot<packet_type>(payload_start);
+            CHECK_RETURN_VOID(data == nullptr, "Failed to parse flatbuffers for packet_id: {}", request->packet_id);
+            handler_func(request, data);
+        });
     }
 }
+
+// 매크로 전개 순서를 제어하는 CONCAT 구현을 사용하여 __LINE__을 고유 이름으로 변환
+#define CONCAT_IMPL(x, y) x##y
+#define CONCAT(x, y) CONCAT_IMPL(x, y)
+
+#define REGISTER_HANDLER_IMPL(packet_id, handler_func, unique_id) \
+static struct CONCAT(auto_registrar_, unique_id) \
+{ \
+    CONCAT(auto_registrar_, unique_id)() \
+    { \
+        net::packet::register_typed_handler(packet_id, handler_func); \
+    } \
+} CONCAT(_auto_registrar_instance_, unique_id);
+
+#define REGISTER_HANDLER(packet_id, handler_func) \
+    REGISTER_HANDLER_IMPL(packet_id, handler_func, __LINE__)
