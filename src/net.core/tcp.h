@@ -24,8 +24,6 @@ namespace net::core
 		tcp();
 		~tcp() noexcept override;
 
-	public:
-
 		// 서버 모드로 초기화
 		void init(boost::asio::ip::port_type port);
 
@@ -39,20 +37,19 @@ namespace net::core
 		void stop();
 
 		// 소켓/acceptor 정리
-		void clear();
+		void close();
 
 		// 현재 실행 중인지 여부
 		bool is_runnable() const { return is_running; }
 
 		moodycamel::BlockingConcurrentQueue<net::packet::packet_request>& get_requests() { return requests; }
 
-	private:
-
 		// 서버 모드
 		void async_accept();
 
-		// 클라이언트 모드
-		void async_connect();
+		void disconnect(uint32_t connection_id);
+
+	private:
 
 		void on_operation_aborted();
 
@@ -87,7 +84,7 @@ namespace net::core
 		std::optional<boost::asio::ip::tcp::acceptor> acceptor;
 
 		// 세션 uid 카운터
-		std::atomic<uint32_t> session_id_counter { 10000 };
+		std::atomic<uint32_t> connection_id_counter { 10000 };
 
 		// 세션 관리 맵
 		common::ts_map<uint32_t, std::shared_ptr<connection>> connections;
@@ -102,7 +99,7 @@ namespace net::core
 // on_aborted      : 서버 소켓 닫힘 등으로 인한 작업 취소 시 실행할 구문
 // on_conn_aborted : 클라이언트가 일방적으로 연결을 끊었을 때 실행할 구문 (주로 다음 accept 재등록)
 // on_error        : 기타 심각한 에러 발생 시 실행할 구문
-#define CHECK_ACCEPT_RETURN_VOID(err, on_aborted, on_conn_aborted, on_error) \
+#define CHECK_ACCEPT_ERROR(err, on_aborted, on_conn_aborted, on_error) \
     do { \
         if (err) { \
             if (err == boost::asio::error::operation_aborted) { \
@@ -110,7 +107,6 @@ namespace net::core
             } \
             else if (err == boost::asio::error::connection_aborted) { \
                 on_conn_aborted; \
-				async_accept(); \
             } \
             else { \
                 on_error; \

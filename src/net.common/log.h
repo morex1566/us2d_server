@@ -53,7 +53,7 @@ namespace net::common
 			auto err_logger = spdlog::stderr_color_mt("stderr");
 
 			spdlog::set_default_logger(console);
-			spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %s:%# (%!) - %v");
+			spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %s:%# - %v");
 		}
 	};
 }

@@ -11,31 +11,10 @@ namespace net::common
     class ts_map
     {
     public:
-
-        //
-
-    protected:
-
-        //
-
-    private:
-
-        //
-
-    public:
-
         ts_map() = default;
         ~ts_map() = default;
 
-    protected:
 
-        //
-
-    private:
-
-        //
-
-    public:
 
         void insert(const key_t& key, const value_t& value)
         {
@@ -85,23 +64,6 @@ namespace net::common
             return map_data.find(key) != map_data.end();
         }
 
-    protected:
-
-        //
-
-    private:
-
-        //
-
-    public:
-
-        //
-
-    protected:
-
-        //
-
-    private:
 
         std::unordered_map<key_t, value_t> map_data;
 

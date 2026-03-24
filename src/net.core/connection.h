@@ -11,24 +11,12 @@ namespace net::core
 	{
 	public:
 
-		//
-
-	protected:
-
-		//
-
-	private:
-
-		//
-
-	public:
-
 		connection
 		(
 			boost::asio::io_context& context,
 			boost::asio::ip::tcp::socket&& client_socket,
-			uint64_t connection_id,
-			std::function<void(uint64_t)> on_disconnected,
+			uint32_t connection_id,
+			std::function<void(uint32_t)> on_disconnected,
 			moodycamel::BlockingConcurrentQueue<net::packet::packet_request>& requests
 		);
 
@@ -38,26 +26,11 @@ namespace net::core
 
 		~connection();
 
-	protected:
-
-		//
-
-	private:
-
-		//
-
-	public:
-
-		// 세션 종료
-		void clear();
+		void close();
 
 		void start();
 
 		void stop();
-
-	protected:
-
-		//
 
 	private:
 
@@ -67,9 +40,11 @@ namespace net::core
 		// packet payload 읽기
 		void async_read_payload(std::shared_ptr<uint8_t> packet_owner, uint16_t payload_size);
 
-	protected:
+		void on_operation_aborted();
 
-		//
+		void on_connection_aborted();
+
+		void on_read_error();
 
 	private:
 
@@ -99,3 +74,24 @@ namespace net::core
 		moodycamel::BlockingConcurrentQueue<net::packet::packet_request>& requests;
 	};
 }
+
+// err						: boost::system::error_code
+// on_operation_aborted     : 서버 소켓 닫힘 등으로 인한 작업 취소 시 실행할 구문
+// on_conn_aborted			: 클라이언트가 일방적으로 연결을 끊었을 때 실행할 구문 (주로 다음 accept 재등록)
+// on_error					: 기타 심각한 에러 발생 시 실행할 구문
+#define CHECK_READ_ERROR(err, on_operation_aborted, on_conn_aborted, on_error) \
+    do { \
+        if (err) { \
+            if (err == boost::asio::error::operation_aborted) { \
+                on_operation_aborted; \
+            } \
+            else \
+			if (err == boost::asio::error::connection_aborted) { \
+                on_conn_aborted; \
+            } \
+            else { \
+                on_error; \
+            } \
+            return; /* 핸들러 실행 종료 */ \
+        } \
+    } while (0)
