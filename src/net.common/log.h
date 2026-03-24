@@ -5,11 +5,19 @@
 #include <iostream>
 #include <typeinfo>
 
-#define CHECK_RETURN_VOID(condition, ...) \
+#define CHECK_RETURN_VOID_ERROR(condition, ...) \
     do { \
         if (condition) \
 		{ \
             SPDLOG_ERROR(__VA_ARGS__); \
+			return; \
+        } \
+    } while (0)
+
+#define CHECK_RETURN_VOID(condition) \
+    do { \
+        if (condition) \
+		{ \
 			return; \
         } \
     } while (0)
@@ -36,6 +44,8 @@ namespace net::common
 	class log : public singleton<log>
 	{
 	public:
+        log();
+        ~log() noexcept override;
 
 		void init()
 		{

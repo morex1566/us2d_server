@@ -3,7 +3,7 @@
 
 namespace net::logic
 {
-    static void on_transform(const std::shared_ptr<net::packet::packet_request> request, const net::protocol::transform* transform_in)
+    static void on_transform(const net::packet::packet_request* request, const net::protocol::transform* transform_in)
     {
         
     }

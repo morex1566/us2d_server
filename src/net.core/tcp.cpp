@@ -7,6 +7,7 @@ net::core::tcp::tcp()
 		socket(context),
 		work_guard(boost::asio::make_work_guard(context))
 {
+	SPDLOG_INFO("create {} instance.", typeid(net::core::tcp).name());
 }
 
 net::core::tcp::~tcp()
@@ -35,21 +36,23 @@ void net::core::tcp::start()
 	if (mode == mode::SERVER)
 	{
 		async_accept();
+		SPDLOG_INFO("start accept client.");
 	}
 	else
 	{
 		async_connect();
+		SPDLOG_INFO("start connect server.");
 	}
 
-	// cpu 코어 수에 맞게 스레드 실행
-	// 메인스레드 자리는 남김
+	// iocp 시작
 	const int thread_count = std::thread::hardware_concurrency() - 1;
 	for (int i = 0; i < thread_count; i++)
 	{
-		context_workers.emplace_back([this]()
-		{
-			context.run();
-		});
+		context_workers.emplace_back(
+			[this]()
+			{
+				context.run();
+			});
 	}
 }
 
@@ -83,57 +86,67 @@ void net::core::tcp::clear()
 
 void net::core::tcp::async_accept()
 {
-	CHECK_RETURN_VOID(mode == tcp::mode::CLIENT, "tcp mode is client.");
-
-	acceptor->async_accept([this](boost::system::error_code error, boost::asio::ip::tcp::socket client_socket)
-	{
-		if (!error)
+	acceptor->async_accept(
+		[this](boost::system::error_code error, boost::asio::ip::tcp::socket client_socket)
 		{
+			CHECK_ACCEPT_RETURN_VOID(error, on_operation_aborted(), on_connection_aborted(), on_accept_error());
+			CHECK_RETURN_VOID(!is_running);
+
 			// 세션 추가
-			const uint64_t new_session_id = session_id_counter.fetch_add(1, std::memory_order::memory_order_release);
+			const uint32_t new_session_id = session_id_counter.fetch_add(1, std::memory_order::memory_order_release);
 			auto new_session = std::make_shared<connection>
 			(
 				context,
 				std::move(client_socket),
 				new_session_id,
-				[this](uint64_t id) { sessions.erase((uint32_t)id); }
+				[this](uint32_t id) { connections.erase(id); },
+				requests
 			);
 			new_session->start();
-			sessions.insert(new_session_id, new_session);
+			connections.insert(new_session_id, new_session);
 
-			std::cout << "tcp::async_accept() - new session id: " << new_session_id << std::endl;
-		}
-		else
-		{
-			std::cout << "tcp::async_accept() error: " << error.message() << std::endl;
-		}
+			SPDLOG_INFO("client : {} connected.", new_session_id);
 
-		if (is_running)
-		{
+			// 다음 연결 수락
 			async_accept();
-		}
-	});
+		});
 }
 
 void net::core::tcp::async_connect()
 {
-	CHECK_RETURN_VOID(mode == tcp::mode::SERVER, "tcp mode is server.");
+	socket.async_connect(endpoint, 
+		[this](const boost::system::error_code& error)
+		{
+			CHECK_RETURN_VOID_ERROR(error, "failed to connect. {}", error.message());
 
-	socket.async_connect(endpoint, [this](const boost::system::error_code& error)
-	{
-		CHECK_RETURN_VOID(error, "failed to connect. {}", error.message());
+			// 세션 추가
+			const uint64_t new_session_id = session_id_counter.fetch_add(1, std::memory_order::memory_order_release);
+			auto new_session = std::make_shared<connection>
+			(
+				context,
+				std::move(socket),
+				new_session_id,
+				[this](uint64_t id) { connections.erase((uint32_t)id); },
+				requests
+			);
+			new_session->start();
 
-		// 세션 추가
-		const uint64_t new_session_id = session_id_counter.fetch_add(1, std::memory_order::memory_order_release);
-		auto new_session = std::make_shared<connection>
-		(
-			context,
-			std::move(socket),
-			new_session_id,
-			[this](uint64_t id) { sessions.erase((uint32_t)id); }
-		);
-		new_session->start();
+			connections.insert(new_session_id, new_session);
+		});
+}
 
-		sessions.insert(new_session_id, new_session);
-	});
+void net::core::tcp::on_operation_aborted()
+{
+	SPDLOG_WARN("connect aborted by server side.");
+}
+
+void net::core::tcp::on_connection_aborted()
+{
+	SPDLOG_WARN("connect aborted by client side.");
+}
+
+void net::core::tcp::on_accept_error()
+{
+	SPDLOG_ERROR("accept failed. severe error occured.");
+	stop();
 }

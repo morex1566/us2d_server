@@ -3,16 +3,23 @@
 
 namespace net::common
 {
-    time::time()
+    time::time() : singleton()
     {
-        last_tick_ = std::chrono::steady_clock::now();
+        last_tick = std::chrono::steady_clock::now();
+
+        SPDLOG_INFO("create {} instance.", typeid(net::common::time).name());
+    }
+
+    time::~time()
+    {
+
     }
 
     void time::tick()
     {
         auto now = std::chrono::steady_clock::now();
-        std::chrono::duration<float> elapsed = now - last_tick_;
-        dt_ = elapsed.count();
-        last_tick_ = now;
+        std::chrono::duration<float> elapsed = now - last_tick;
+        dt = elapsed.count();
+        last_tick = now;
     }
 }

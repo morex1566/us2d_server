@@ -6,15 +6,37 @@
 
 namespace net::common
 {
-    /// <summary>
-    /// 다중 읽기 가능, thread-safe 쓰기 가능한 해쉬맵
-    /// </summary>
-    /// <typeparam name="key_t"></typeparam>
-    /// <typeparam name="value_t"></typeparam>
+    // 다중 읽기 가능, thread-safe 쓰기 가능한 해쉬맵
     template <typename key_t, typename value_t>
     class ts_map
     {
     public:
+
+        //
+
+    protected:
+
+        //
+
+    private:
+
+        //
+
+    public:
+
+        ts_map() = default;
+        ~ts_map() = default;
+
+    protected:
+
+        //
+
+    private:
+
+        //
+
+    public:
+
         void insert(const key_t& key, const value_t& value)
         {
             std::unique_lock<std::shared_mutex> lock(map_mutex);
@@ -63,12 +85,27 @@ namespace net::common
             return map_data.find(key) != map_data.end();
         }
 
+    protected:
+
+        //
+
     private:
+
+        //
+
+    public:
+
+        //
+
+    protected:
+
+        //
+
+    private:
+
         std::unordered_map<key_t, value_t> map_data;
 
-        /// <summary>
-        /// 읽기 모드 lock X 구현.
-        /// </summary>
+        // 읽기 모드 lock X 구현.
         mutable std::shared_mutex map_mutex;
     };
 }

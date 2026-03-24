@@ -4,17 +4,17 @@
 #include "net.common/ts_memory_pool.h"
 #include "net.core/connection.h"
 #include "net.packet/packet.h"
+#include <moodycamel/blockingconcurrentqueue.h>
 
 namespace net::core
 {
-	/// <summary>
-	/// TCP 서버 / 클라이언트 통합 클래스
-	/// - 서버 모드: tcp(port)
-	/// - 클라이언트 모드: tcp(host, port)
-	/// </summary>
+	// TCP 서버 / 클라이언트 통합 클래스
+	// - 서버 모드: tcp(port)
+	// - 클라이언트 모드: tcp(host, port)
 	class tcp : public net::common::singleton<tcp>
 	{
 	public:
+
 		enum class mode 
 		{ 
 			SERVER, 
@@ -22,8 +22,9 @@ namespace net::core
 		};
 
 		tcp();
-
 		~tcp() noexcept override;
+
+	public:
 
 		// 서버 모드로 초기화
 		void init(boost::asio::ip::port_type port);
@@ -43,6 +44,8 @@ namespace net::core
 		// 현재 실행 중인지 여부
 		bool is_runnable() const { return is_running; }
 
+		moodycamel::BlockingConcurrentQueue<net::packet::packet_request>& get_requests() { return requests; }
+
 	private:
 
 		// 서버 모드
@@ -50,6 +53,12 @@ namespace net::core
 
 		// 클라이언트 모드
 		void async_connect();
+
+		void on_operation_aborted();
+
+		void on_connection_aborted();
+
+		void on_accept_error();
 
 	private:
 
@@ -81,6 +90,31 @@ namespace net::core
 		std::atomic<uint32_t> session_id_counter { 10000 };
 
 		// 세션 관리 맵
-		common::ts_map<uint32_t, std::shared_ptr<connection>> sessions;
+		common::ts_map<uint32_t, std::shared_ptr<connection>> connections;
+
+		// 디스패처가 읽는 부분
+		// TODO : 시퀀스 -> priority queue로 구현?
+		moodycamel::BlockingConcurrentQueue<net::packet::packet_request> requests;
 	};
 }
+
+// err			   : boost::system::error_code
+// on_aborted      : 서버 소켓 닫힘 등으로 인한 작업 취소 시 실행할 구문
+// on_conn_aborted : 클라이언트가 일방적으로 연결을 끊었을 때 실행할 구문 (주로 다음 accept 재등록)
+// on_error        : 기타 심각한 에러 발생 시 실행할 구문
+#define CHECK_ACCEPT_RETURN_VOID(err, on_aborted, on_conn_aborted, on_error) \
+    do { \
+        if (err) { \
+            if (err == boost::asio::error::operation_aborted) { \
+                on_aborted; \
+            } \
+            else if (err == boost::asio::error::connection_aborted) { \
+                on_conn_aborted; \
+				async_accept(); \
+            } \
+            else { \
+                on_error; \
+            } \
+            return; /* 핸들러 실행 종료 */ \
+        } \
+    } while (0)

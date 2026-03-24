@@ -5,11 +5,30 @@ class transform;
 class game_component
 {
 public:
-    game_object* object = nullptr;
-    transform* transform_ptr = nullptr;
-    bool enabled = true;
+
+	//
+
+protected:
+
+	//
+
+private:
+
+	//
+
+public:
 
     virtual ~game_component() = default;
+
+protected:
+
+	//
+
+private:
+
+	//
+
+public:
 
     virtual void awake() {}
     virtual void on_enable() {}
@@ -19,4 +38,26 @@ public:
     virtual void late_update() {}
     virtual void on_disable() {}
     virtual void on_destroy() {}
+
+protected:
+
+	//
+
+private:
+
+	//
+
+public:
+
+    game_object* object = nullptr;
+    transform* transform_ptr = nullptr;
+    bool enabled = true;
+
+protected:
+
+	//
+
+private:
+
+	//
 };

@@ -5,30 +5,64 @@
 
 namespace net::common
 {
-    class ts_memory_pool : public singleton<ts_memory_pool>    {
+    class ts_memory_pool : public singleton<ts_memory_pool>
+    {
     public:
-        ts_memory_pool();
 
+        ts_memory_pool();
         ~ts_memory_pool();
 
         std::shared_ptr<uint8_t> rent(size_t size);
 
     private:
-        // Internal methods to handle specific block types
+
+        // 필요한 크기에 따른 풀 선택 및 할당 헬퍼
         template<typename block_type>
-        block_type* pop(boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack);
+        std::shared_ptr<uint8_t> rent_block(boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack)
+        {
+            block_type* block = nullptr;
+            if (!stack.pop(block) && can_allocate_dynamic())
+            {
+                block = new block_type();
+            }
+
+            if (block)
+            {
+                return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
+                    [this, &stack](uint8_t* p)
+                    {
+                        if (!this->push(reinterpret_cast<block_type*>(p), stack))
+                        {
+                            delete reinterpret_cast<block_type*>(p);
+                        }
+                    });
+            }
+            return nullptr;
+        }
 
         template<typename block_type>
-        bool push(block_type* ptr, boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack);
+        block_type* pop(boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack)
+        {
+            block_type* ptr = nullptr;
+            if (stack.pop(ptr)) return ptr;
 
-        // Pre-allocation helper
+            return nullptr;
+        }
+
+        template<typename block_type>
+        bool push(block_type* ptr, boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack)
+        {
+            return stack.push(ptr);
+        }
+
         template<typename block_type>
         void initialize_pool(boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack, size_t count);
 
-        // Dynamic allocation check based on system_config RAM limits
+        // system_config RAM 제한에 따른 동적 할당 가능 여부 체크
         bool can_allocate_dynamic();
 
     private:
+
         boost::lockfree::stack<block64*, boost::lockfree::fixed_sized<false>> pool_64b
         { system_config::ts_memory_pool::pool_64b_count };
 
@@ -50,26 +84,5 @@ namespace net::common
         boost::lockfree::stack<block4096*, boost::lockfree::fixed_sized<false>> pool_4096b
         { system_config::ts_memory_pool::pool_4096b_count };
     };
-
-    // 1. 필요한 크기에 따른 풀 선택
-    // 2. 스택에서 Pop 시도, 실패 시 동적으로 RAM 한도 내에서 할당
-    // 3. 반환 시 해당 풀로 다시 반입되도록 하는 커스텀 Deleter 설정
-
-
-    template<typename block_type>
-    inline block_type* ts_memory_pool::pop(boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack)
-    {
-        block_type* ptr = nullptr;
-        if (stack.pop(ptr)) return ptr;
-
-
-        return nullptr;
-    }
-
-    template<typename block_type>
-    inline bool ts_memory_pool::push(block_type* ptr, boost::lockfree::stack<block_type*, boost::lockfree::fixed_sized<false>>& stack)
-    {
-        return stack.push(ptr);
-    }
 }
 

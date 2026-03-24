@@ -6,9 +6,32 @@
 class game_object
 {
 public:
-    uint32_t object_id = 0;
-    bool active_self = true;
-    
+
+	//
+
+protected:
+
+	//
+
+private:
+
+	//
+
+public:
+
+	game_object() = default;
+	~game_object() = default;
+
+protected:
+
+	//
+
+private:
+
+	//
+
+public:
+
     // 컴포넌트 추가
     template<typename T, typename... Args>
     std::shared_ptr<T> add_component(Args&&... args)
@@ -38,6 +61,24 @@ public:
 
     const std::vector<std::shared_ptr<game_component>>& get_components() const { return components; }
 
+protected:
+
+	//
+
 private:
+
+	//
+
+public:
+
+    uint32_t object_id = 0;
+    bool active_self = true;
+
+protected:
+
+	//
+
+private:
+
     std::vector<std::shared_ptr<game_component>> components;
 };

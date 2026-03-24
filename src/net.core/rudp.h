@@ -65,7 +65,7 @@ namespace net::core
 		std::atomic<uint32_t> session_id_counter{ 10000 };
 
 		// 세션 관리 맵
-		common::ts_map<uint32_t, std::shared_ptr<connection>> sessions;
+		common::ts_map<uint32_t, std::shared_ptr<connection>> connections;
 	};
 
 }

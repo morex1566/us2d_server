@@ -28,55 +28,13 @@ namespace net::common
 
     std::shared_ptr<uint8_t> ts_memory_pool::rent(size_t size)
     {
-        if (size <= 64)
-        {
-            block64* block = pop(pool_64b);
-            if (!block && can_allocate_dynamic()) block = new block64();
-            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
-                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block64*>(p), pool_64b)) delete reinterpret_cast<block64*>(p); });
-        }
-        else if (size <= 128)
-        {
-            block128* block = pop(pool_128b);
-            if (!block && can_allocate_dynamic()) block = new block128();
-            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
-                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block128*>(p), pool_128b)) delete reinterpret_cast<block128*>(p); });
-        }
-        else if (size <= 256)
-        {
-            block256* block = pop(pool_256b);
-            if (!block && can_allocate_dynamic()) block = new block256();
-            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
-                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block256*>(p), pool_256b)) delete reinterpret_cast<block256*>(p); });
-        }
-        else if (size <= 512)
-        {
-            block512* block = pop(pool_512b);
-            if (!block && can_allocate_dynamic()) block = new block512();
-            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
-                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block512*>(p), pool_512b)) delete reinterpret_cast<block512*>(p); });
-        }
-        else if (size <= 1024)
-        {
-            block1024* block = pop(pool_1024b);
-            if (!block && can_allocate_dynamic()) block = new block1024();
-            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
-                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block1024*>(p), pool_1024b)) delete reinterpret_cast<block1024*>(p); });
-        }
-        else if (size <= 2048)
-        {
-            block2048* block = pop(pool_2048b);
-            if (!block && can_allocate_dynamic()) block = new block2048();
-            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
-                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block2048*>(p), pool_2048b)) delete reinterpret_cast<block2048*>(p); });
-        }
-        else if (size <= 4096)
-        {
-            block4096* block = pop(pool_4096b);
-            if (!block && can_allocate_dynamic()) block = new block4096();
-            if (block) return std::shared_ptr<uint8_t>(reinterpret_cast<uint8_t*>(block),
-                [this](uint8_t* p) { if (!this->push(reinterpret_cast<block4096*>(p), pool_4096b)) delete reinterpret_cast<block4096*>(p); });
-        }
+        if (size <= 64)   return rent_block(pool_64b);
+        if (size <= 128)  return rent_block(pool_128b);
+        if (size <= 256)  return rent_block(pool_256b);
+        if (size <= 512)  return rent_block(pool_512b);
+        if (size <= 1024) return rent_block(pool_1024b);
+        if (size <= 2048) return rent_block(pool_2048b);
+        if (size <= 4096) return rent_block(pool_4096b);
 
         SPDLOG_ERROR("memory rent failed. size: {}, is out of limit?", size);
         return nullptr;

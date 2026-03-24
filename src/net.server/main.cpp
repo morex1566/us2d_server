@@ -17,28 +17,24 @@ int main()
 	net::common::log& logger = net::common::log::get_instance();
 	{
 		logger.init();
-		SPDLOG_INFO("create {} instance.", typeid(net::common::log).name());
 	}
 
 	net::common::time& timer = net::common::time::get_instance();
 	{
 		timer.tick();
-		SPDLOG_INFO("create {} instance.", typeid(net::common::time).name());
 	}
 
 	net::core::tcp& tcp = net::core::tcp::get_instance();
 	{
 		tcp.init(TCP_PORT);
-		SPDLOG_INFO("create {} instance.", typeid(net::core::tcp).name());
-
-		tcp.start();
 	}
 
 	game_engine& engine = game_engine::get_instance();
 	{
 		engine.init();
-		SPDLOG_INFO("create {} instance.", typeid(game_engine).name());
 	}
+
+	tcp.start();
 
 	while (engine.is_runnable() && tcp.is_runnable())
 	{
